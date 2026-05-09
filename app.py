@@ -1,5 +1,4 @@
 from flask import Flask, render_template, url_for, session, redirect
-from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
