@@ -1,0 +1,13 @@
+{
+  "name": "equipment-maintenance",
+  "version": "1.0.0",
+  "description": "Equipment Maintenance Flask Application",
+  "main": "app.py",
+  "scripts": {
+    "install-deps": "node install.js",
+    "setup": "npm install && node install.js"
+  },
+  "keywords": ["equipment", "maintenance", "flask"],
+  "author": "",
+  "license": "ISC"
+}
