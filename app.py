@@ -1,8 +1,20 @@
 from flask import Flask, render_template, url_for, session, redirect
-from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 
+from supabase import create_client
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # reads your .env file
+
 app = Flask(__name__)
+
+supabase = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_ANON_KEY")
+)
+
+app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
 app.secret_key = "my_secret_key"
 
 #configure sql alchemy 
@@ -24,19 +36,21 @@ db = SQLAlchemy(app)
 
 
 #routes
+
+@app.route('/login')
+def login():
+    return render_template('login.html')
+
+    
+
 @app.route("/")
 def home():
     if "username" in session:
         return redirect(url_for('dashboard'))
-    return render_template("home.html")
-
-@app.route("/login")
-def login():
     return render_template("login.html")
 
-@app.route('/register')
-def register():
-    return render_template('register.html')
+
+
 
 if __name__ == "__main__":
     with app.app_context():
