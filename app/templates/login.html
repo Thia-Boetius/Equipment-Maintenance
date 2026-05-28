@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
     <title>Login</title>
-    
 </head>
 <body>
 
@@ -29,5 +28,14 @@
             <button type="submit">Login</button>
         </form>
     </div>
+    <!-- Error popup -->
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div id="error-popup">
+      {{ messages[0] }}
+    </div>
+  {% endif %}
+{% endwith %}
+
 </body>
 </html>
