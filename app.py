@@ -1,44 +1,90 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-from werkzeug.security import generate_password_hash, check_password_hash
-from flask_mysqldb import MySQL
 from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, url_for, session, redirect, request, flash
+from supabase import create_client
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # leest je .env bestand
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
-# database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/asset_tracker'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+supabase = create_client(
+    os.getenv("SUPABASE_URL"),
+    os.getenv("SUPABASE_ANON_KEY")
+)
+
+app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
+app.secret_key = "my_secret_key"
+
+# Configureer SQLAlchemy voor de database verbinding
+app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///user.db"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
+# ── Routes ──────────────────────────────────────────
 
+# Homepagina: als de gebruiker al ingelogd is, stuur hem naar het dashboard
+# anders stuur hem naar de loginpagina
 
-
-
-#routes
 @app.route("/")
 def home():
-    if "username" in session:
-        return redirect(url_for('dashboard'))
-    return render_template("home.html")
+    if "user" in session:
+        return redirect(url_for("dashboard"))
+    return redirect(url_for("login"))
 
-@app.route("/login", methods=["POST"])
+# Loginpagina: hier voert de gebruiker zijn email en wachtwoord in
+# Bij GET: laad de loginpagina
+# Bij POST: haal email en wachtwoord op uit het formulier en
+# probeer in te loggen via Supabase. Als het lukt, sla de gebruiker
+# op in de sessie en stuur hem naar het dashboard.
+# Als het mislukt, toon een foutmelding en stuur hem terug naar de loginpagina.
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    username = request.form['username']
-    password = request.form['password']
-    user = User.query.filter_by(username=username).first()
-    if user and user.check_password(password):
-        session['username'] = username
-        return redirect(url_for('dashboard'))
-    else:
-        return render_template("home.html")
+    if request.method == "POST":
+        email    = request.form["email"]
+        password = request.form["password"]
 
-@app.route('/register')
-def register():
-    return render_template('register.html')
+        try:
+            response = supabase.auth.sign_in_with_password({
+                "email": email,
+                "password": password
+            })
+            # Sla gebruikersinfo op in de Flask sessie
+            session["user"] = {
+                "id":    response.user.id,
+                "email": response.user.email,
+            }
+            return redirect(url_for("dashboard"))
+
+        except Exception as e:
+            print("LOGIN ERROR:", e)
+            flash("Ongeldig e-mailadres of wachtwoord.")
+            return redirect(url_for("login"))
+
+    return render_template("login.html")
+
+
+# Uitloggen: verwijder de gebruiker uit de sessie en
+# log hem uit via Supabase, stuur hem daarna naar de loginpagina
+
+@app.route("/logout")
+def logout():
+    supabase.auth.sign_out()
+    session.clear()
+    return redirect(url_for("login"))
+
+
+# Dashboard: alleen toegankelijk als de gebruiker ingelogd is
+# Als de gebruiker niet ingelogd is, stuur hem naar de loginpagina
+# Geef de gebruikersinfo mee aan de template zodat je die kan gebruiken
+
+@app.route("/dashboard")
+def dashboard():
+    if "user" not in session:  # 🔒 bescherm de route tegen niet-ingelogde gebruikers
+        return redirect(url_for("login"))
+    return render_template("dashboard.html", user=session["user"])
+
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
