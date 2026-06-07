@@ -2,15 +2,403 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>Maintix</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --navy: #1a2744;
+            --orange: #f26522;
+            --orange-light: #fff0e8;
+            --bg: #f0f2f7;
+            --white: #ffffff;
+            --text: #1a2744;
+            --muted: #8a93a8;
+            --border: #e4e8f0;
+            --green: #22c55e;
+            --red: #ef4444;
+            --sidebar-w: 230px;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--navy);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
+
+        .sidebar-logo {
+            padding: 1.5rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: var(--orange);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .logo-text {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1rem 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 0.85rem;
+            border-radius: 8px;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.15s;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.08);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: var(--orange);
+            color: white;
+        }
+
+        .nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+
+        .sidebar-footer {
+            padding: 1rem 0.75rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 0.85rem;
+            border-radius: 8px;
+            color: rgba(255,255,255,0.5);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+
+        .logout-btn:hover { color: white; background: rgba(255,255,255,0.08); }
+
+        /* ── Main ── */
+        .main {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Topbar ── */
+        .topbar {
+            background: var(--white);
+            padding: 0.9rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 50;
+        }
+
+        .page-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem 0.85rem;
+        }
+
+        .search-box input {
+            border: none;
+            background: transparent;
+            outline: none;
+            font-family: inherit;
+            font-size: 0.9rem;
+            color: var(--text);
+            width: 180px;
+        }
+
+        .search-box input::placeholder { color: var(--muted); }
+
+        .avatar {
+            width: 34px; height: 34px;
+            background: var(--orange);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .user-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        /* ── Content ── */
+        .content {
+            padding: 2rem;
+            flex: 1;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .see-more {
+            color: var(--orange);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        /* ── Data Table ── */
+        .table-wrap { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 0.6rem 1rem 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 0.85rem 1rem 0.85rem 0;
+            font-size: 0.92rem;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover td { background: #fafbfd; }
+
+        /* ── Badges ── */
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-green { background: #dcfce7; color: #16a34a; }
+        .badge-red   { background: #fee2e2; color: #dc2626; }
+        .badge-gray  { background: #f1f5f9; color: #64748b; }
+        .badge-orange{ background: var(--orange-light); color: var(--orange); }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+    </style>
 </head>
 <body>
-    <div>
-        <h1>Welcome, {{username}}</h1>
-        <p>welcome to your dashboard</p>
-        <a href="" class="btn btn-login"></a>
-        <button ><a href="/logout">Logout</a></button>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-icon"><img src="../static/img/image.png" style="width:100%;
+            height: 100%;
+            object-fit: cover;"></div>
+        <span class="logo-text">Maintix</span>
     </div>
+
+    <nav class="sidebar-nav">
+        <a href="{{ url_for('dashboard', table='Asset') }}"
+           class="nav-item {{ 'active' if active_table == 'Asset' else '' }}">
+            <span class="nav-icon">🏠</span> Dashboard
+        </a>
+        <a href="{{ url_for('dashboard', table='Asset') }}"
+           class="nav-item {{ 'active' if active_table == 'Asset' else '' }}">
+            <span class="nav-icon">⚙️</span> Equipment
+        </a>
+        <a href="{{ url_for('dashboard', table='Maintenance_task') }}"
+           class="nav-item {{ 'active' if active_table == 'Maintenance_task' else '' }}">
+            <span class="nav-icon">🔧</span> Maintenance
+        </a>
+        <a href="{{ url_for('dashboard', table='Status') }}"
+           class="nav-item {{ 'active' if active_table == 'Status' else '' }}">
+            <span class="nav-icon">📊</span> Reports
+        </a>
+        <a href="{{ url_for('dashboard', table='Maintenance_type') }}"
+           class="nav-item {{ 'active' if active_table == 'Maintenance_type' else '' }}">
+            <span class="nav-icon">📋</span> Log History
+        </a>
+        <a href="{{ url_for('dashboard', table='Department') }}"
+           class="nav-item {{ 'active' if active_table == 'Department' else '' }}">
+            <span class="nav-icon">📈</span> Analytics
+        </a>
+        <a href="{{ url_for('dashboard', table='Position') }}"
+           class="nav-item {{ 'active' if active_table == 'Position' else '' }}">
+            <span class="nav-icon">🔩</span> Settings
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+            <span class="nav-icon">🚪</span> Log out
+        </a>
+    </div>
+</aside>
+
+<!-- ── Main ── -->
+<div class="main">
+
+    <!-- Topbar -->
+    <header class="topbar">
+        <h1 class="page-title">{{ active_table.replace('_', ' ') }}</h1>
+        <div class="topbar-right">
+            <div class="search-box">
+                <span>🔍</span>
+                <input type="text" id="searchInput" placeholder="Search..." oninput="filterTable()">
+            </div>
+            <div class="user-chip">
+                <div class="avatar">{{ employee.First_name[0] }}</div>
+                {{ employee.First_name }} ▾
+            </div>
+        </div>
+    </header>
+
+    <!-- Content -->
+    <div class="content">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">{{ active_table.replace('_', ' ') }} Overview</span>
+                <a class="see-more" href="#">see more</a>
+            </div>
+
+            <div class="table-wrap">
+                {% if tasks %}
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            {% for key in tasks[0].keys() %}
+                            <th>{{ key.replace('_', ' ') }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in tasks %}
+                        <tr>
+                            {% for key, value in row.items() %}
+                            <td>
+                                {% if value is none %}
+                                    <span style="color: var(--muted)">—</span>
+                                {% elif 'status' in key|lower and value|string|lower in ['active', 'operational'] %}
+                                    <span class="badge badge-green">{{ value }}</span>
+                                {% elif 'status' in key|lower and value|string|lower in ['inactive', 'out of service', 'failed'] %}
+                                    <span class="badge badge-red">{{ value }}</span>
+                                {% elif 'defect' in key|lower and value|string|lower != 'none' %}
+                                    <span class="badge badge-red">{{ value }}</span>
+                                {% elif 'defect' in key|lower %}
+                                    <span class="badge badge-gray">{{ value }}</span>
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="no-data">No data found in {{ active_table }}.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterTable() {
+        const input = document.getElementById("searchInput").value.toLowerCase();
+        const rows = document.querySelectorAll("#dataTable tbody tr");
+        rows.forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
+        });
+    }
+</script>
+
 </body>
 </html>
