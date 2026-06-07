@@ -81,10 +81,22 @@ def logout():
 
 @app.route("/dashboard")
 def dashboard():
-    if "user" not in session:  # 🔒 bescherm de route tegen niet-ingelogde gebruikers
+    if "user" not in session:
         return redirect(url_for("login"))
-    return render_template("dashboard.html", user=session["user"])
 
+    user_id = session["user"]["id"]
+
+    print("Logged in Supabase User ID:", user_id)
+    employee = (
+        supabase.table("Employee")
+        .select("*")
+        .eq("user_UID", user_id)
+        .execute()
+    )
+
+    print("Employee Query Result:")
+    print(employee.data)
+    return str(employee.data)
 
 if __name__ == "__main__":
     app.run(debug=True)
