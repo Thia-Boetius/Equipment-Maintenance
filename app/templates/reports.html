@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Maintix</title>
+    <title>Maintix – Reports</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -85,16 +85,8 @@
             cursor: pointer;
         }
 
-        .nav-item:hover {
-            background: rgba(255,255,255,0.08);
-            color: white;
-        }
-
-        .nav-item.active {
-            background: var(--orange);
-            color: white;
-        }
-
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+        .nav-item.active { background: var(--orange); color: white; }
         .nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
 
         .sidebar-footer {
@@ -136,39 +128,15 @@
             position: sticky; top: 0; z-index: 50;
         }
 
-        .page-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: var(--text);
-        }
+        .page-title { font-size: 1.4rem; font-weight: 700; color: var(--text); }
 
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .search-box {
+        .user-chip {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.5rem 0.85rem;
-        }
-
-        .search-box input {
-            border: none;
-            background: transparent;
-            outline: none;
-            font-family: inherit;
+            font-weight: 600;
             font-size: 0.9rem;
-            color: var(--text);
-            width: 180px;
         }
-
-        .search-box input::placeholder { color: var(--muted); }
 
         .avatar {
             width: 34px; height: 34px;
@@ -180,54 +148,68 @@
             font-size: 0.85rem;
         }
 
-        .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-
         /* ── Content ── */
-        .content {
-            padding: 2rem;
-            flex: 1;
+        .content { padding: 2rem; flex: 1; }
+
+        /* ── Summary Cards ── */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
 
+        .summary-card {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .summary-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .summary-sub {
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        .summary-card.accent { border-left: 4px solid var(--orange); }
+
+        /* ── Cards ── */
         .card {
             background: var(--white);
             border-radius: 12px;
             border: 1px solid var(--border);
             padding: 1.5rem;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
         }
 
         .card-title {
             font-size: 1.05rem;
             font-weight: 700;
+            margin-bottom: 1.25rem;
         }
 
-        .see-more {
-            color: var(--orange);
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        /* ── Data Table ── */
+        /* ── Table ── */
         .table-wrap { overflow-x: auto; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+        table { width: 100%; border-collapse: collapse; }
 
         thead th {
             text-align: left;
@@ -260,16 +242,53 @@
             font-weight: 600;
         }
 
-        .badge-green { background: #dcfce7; color: #16a34a; }
-        .badge-red   { background: #fee2e2; color: #dc2626; }
-        .badge-gray  { background: #f1f5f9; color: #64748b; }
-        .badge-orange{ background: var(--orange-light); color: var(--orange); }
+        .badge-green  { background: #dcfce7; color: #16a34a; }
+        .badge-red    { background: #fee2e2; color: #dc2626; }
+        .badge-gray   { background: #f1f5f9; color: #64748b; }
+        .badge-orange { background: var(--orange-light); color: var(--orange); }
 
         .no-data {
             text-align: center;
             padding: 3rem;
             color: var(--muted);
             font-size: 0.95rem;
+        }
+
+        /* ── Status breakdown bars ── */
+        .status-list { display: flex; flex-direction: column; gap: 0.85rem; }
+
+        .status-row { display: flex; align-items: center; gap: 1rem; }
+
+        .status-name {
+            width: 140px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: var(--orange);
+            border-radius: 4px;
+            transition: width 0.4s ease;
+        }
+
+        .status-count {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--muted);
+            width: 30px;
+            text-align: right;
         }
     </style>
 </head>
@@ -278,39 +297,30 @@
 <!-- ── Sidebar ── -->
 <aside class="sidebar">
     <div class="sidebar-logo">
-        <div class="logo-icon"><img src="../static/img/image.png" style="width:100%;
-            height: 100%;
-            object-fit: cover;"></div>
+        <div class="logo-icon"><img src="../static/img/image.png" style="width:100%; height:100%; object-fit:cover;"></div>
         <span class="logo-text">Maintix</span>
     </div>
 
     <nav class="sidebar-nav">
-        <a href="{{ url_for('dashboard', table='Asset') }}"
-           class="nav-item {{ 'active' if active_table == 'Asset' else '' }}">
+        <a href="{{ url_for('dashboard', table='Asset') }}" class="nav-item">
             <span class="nav-icon">🏠</span> Dashboard
         </a>
-        <a href="{{ url_for('dashboard', table='Asset') }}"
-           class="nav-item {{ 'active' if active_table == 'Asset' else '' }}">
+        <a href="{{ url_for('dashboard', table='Asset') }}" class="nav-item">
             <span class="nav-icon">⚙️</span> Equipment
         </a>
-        <a href="{{ url_for('dashboard', table='Maintenance_task') }}"
-           class="nav-item {{ 'active' if active_table == 'Maintenance_task' else '' }}">
+        <a href="{{ url_for('dashboard', table='Maintenance_task') }}" class="nav-item">
             <span class="nav-icon">🔧</span> Maintenance
         </a>
-        <a href="{{ url_for('reports') }}"
-           class="nav-item">
+        <a href="{{ url_for('reports') }}" class="nav-item active">
             <span class="nav-icon">📊</span> Reports
         </a>
-        <a href="{{ url_for('dashboard', table='Maintenance_type') }}"
-           class="nav-item {{ 'active' if active_table == 'Maintenance_type' else '' }}">
+        <a href="{{ url_for('dashboard', table='Maintenance_type') }}" class="nav-item">
             <span class="nav-icon">📋</span> Log History
         </a>
-        <a href="{{ url_for('dashboard', table='Department') }}"
-           class="nav-item {{ 'active' if active_table == 'Department' else '' }}">
+        <a href="{{ url_for('dashboard', table='Department') }}" class="nav-item">
             <span class="nav-icon">📈</span> Analytics
         </a>
-        <a href="{{ url_for('dashboard', table='Position') }}"
-           class="nav-item {{ 'active' if active_table == 'Position' else '' }}">
+        <a href="{{ url_for('dashboard', table='Position') }}" class="nav-item">
             <span class="nav-icon">🔩</span> Settings
         </a>
     </nav>
@@ -327,30 +337,68 @@
 
     <!-- Topbar -->
     <header class="topbar">
-        <h1 class="page-title">{{ active_table.replace('_', ' ') }}</h1>
-        <div class="topbar-right">
-            <div class="search-box">
-                <span>🔍</span>
-                <input type="text" id="searchInput" placeholder="Search..." oninput="filterTable()">
-            </div>
-            <div class="user-chip">
-                <div class="avatar">{{ employee.First_name[0] }}</div>
-                {{ employee.First_name }} ▾
-            </div>
+        <h1 class="page-title">Reports</h1>
+        <div class="user-chip">
+            <div class="avatar">{{ employee.First_name[0] }}</div>
+            {{ employee.First_name }} ▾
         </div>
     </header>
 
     <!-- Content -->
     <div class="content">
-        <div class="card">
-            <div class="card-header">
-                <span class="card-title">{{ active_table.replace('_', ' ') }} Overview</span>
-                <a class="see-more" href="#">see more</a>
-            </div>
 
+        <!-- Summary cards -->
+        <div class="summary-grid">
+            <div class="summary-card accent">
+                <span class="summary-label">Total Assets</span>
+                <span class="summary-value">{{ assets | length }}</span>
+                <span class="summary-sub">registered equipment</span>
+            </div>
+            <div class="summary-card accent">
+                <span class="summary-label">Maintenance Tasks</span>
+                <span class="summary-value">{{ tasks | length }}</span>
+                <span class="summary-sub">all records</span>
+            </div>
+            <div class="summary-card accent">
+                <span class="summary-label">Status Types</span>
+                <span class="summary-value">{{ statuses | length }}</span>
+                <span class="summary-sub">defined statuses</span>
+            </div>
+        </div>
+
+        <!-- Status breakdown -->
+        {% if statuses %}
+        <div class="card">
+            <div class="card-title">Status Overview</div>
+            <div class="status-list">
+                {% set max_count = namespace(val=1) %}
+                {% for s in statuses %}
+                    {% set cnt = assets | selectattr('Status_ID', 'equalto', s.get('Status_ID', s.get('id', ''))) | list | length %}
+                    {% if cnt > max_count.val %}{% set max_count.val = cnt %}{% endif %}
+                {% endfor %}
+
+                {% for s in statuses %}
+                    {% set status_name = s.get('Status_name', s.get('name', s | string)) %}
+                    {% set cnt = assets | selectattr('Status_ID', 'equalto', s.get('Status_ID', s.get('id', ''))) | list | length %}
+                    {% set pct = (cnt / max_count.val * 100) if max_count.val > 0 else 0 %}
+                    <div class="status-row">
+                        <span class="status-name">{{ status_name }}</span>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width: {{ pct }}%"></div>
+                        </div>
+                        <span class="status-count">{{ cnt }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent maintenance tasks -->
+        <div class="card">
+            <div class="card-title">Maintenance Tasks</div>
             <div class="table-wrap">
                 {% if tasks %}
-                <table id="dataTable">
+                <table>
                     <thead>
                         <tr>
                             {% for key in tasks[0].keys() %}
@@ -365,14 +413,10 @@
                             <td>
                                 {% if value is none %}
                                     <span style="color: var(--muted)">—</span>
-                                {% elif 'status' in key|lower and value|string|lower in ['active', 'operational'] %}
+                                {% elif 'status' in key|lower and value|string|lower in ['active', 'operational', 'completed'] %}
                                     <span class="badge badge-green">{{ value }}</span>
-                                {% elif 'status' in key|lower and value|string|lower in ['inactive', 'out of service', 'failed'] %}
+                                {% elif 'status' in key|lower and value|string|lower in ['inactive', 'out of service', 'failed', 'pending'] %}
                                     <span class="badge badge-red">{{ value }}</span>
-                                {% elif 'defect' in key|lower and value|string|lower != 'none' %}
-                                    <span class="badge badge-red">{{ value }}</span>
-                                {% elif 'defect' in key|lower %}
-                                    <span class="badge badge-gray">{{ value }}</span>
                                 {% else %}
                                     {{ value }}
                                 {% endif %}
@@ -383,22 +427,52 @@
                     </tbody>
                 </table>
                 {% else %}
-                <p class="no-data">No data found in {{ active_table }}.</p>
+                <p class="no-data">No maintenance tasks found.</p>
                 {% endif %}
             </div>
         </div>
-    </div>
-</div>
 
-<script>
-    function filterTable() {
-        const input = document.getElementById("searchInput").value.toLowerCase();
-        const rows = document.querySelectorAll("#dataTable tbody tr");
-        rows.forEach(row => {
-            row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
-        });
-    }
-</script>
+        <!-- Assets table -->
+        <div class="card">
+            <div class="card-title">Asset Register</div>
+            <div class="table-wrap">
+                {% if assets %}
+                <table>
+                    <thead>
+                        <tr>
+                            {% for key in assets[0].keys() %}
+                            <th>{{ key.replace('_', ' ') }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in assets %}
+                        <tr>
+                            {% for key, value in row.items() %}
+                            <td>
+                                {% if value is none %}
+                                    <span style="color: var(--muted)">—</span>
+                                {% elif 'status' in key|lower and value|string|lower in ['active', 'operational'] %}
+                                    <span class="badge badge-green">{{ value }}</span>
+                                {% elif 'status' in key|lower and value|string|lower in ['inactive', 'out of service', 'failed'] %}
+                                    <span class="badge badge-red">{{ value }}</span>
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="no-data">No assets found.</p>
+                {% endif %}
+            </div>
+        </div>
+
+    </div><!-- /content -->
+</div><!-- /main -->
 
 </body>
 </html>
