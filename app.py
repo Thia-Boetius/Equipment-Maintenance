@@ -57,7 +57,7 @@ def login():
             return redirect(url_for("dashboard"))
 
         except Exception as e:
-            print("LOGIN ERROR:", e)
+            print("LOGIN ERROR:", str(e))  # 👈 wrap in str()
             flash("Ongeldig e-mailadres of wachtwoord.")
             return redirect(url_for("login"))
 
