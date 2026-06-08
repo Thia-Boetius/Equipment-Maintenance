@@ -4,12 +4,16 @@ from supabase import create_client
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+load_dotenv()  # reads your .env file
 
 supabase = create_client(
     os.getenv("SUPABASE_URL"),
     os.getenv("SUPABASE_ANON_KEY")
 )
+
+# Test query
+response = supabase.table("Department").select("*").execute()
+print(response.data)
 
 app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
 app.secret_key = "my_secret_key"
