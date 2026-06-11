@@ -10,11 +10,6 @@ supabase = create_client(
     os.getenv("SUPABASE_URL"),
     os.getenv("SUPABASE_ANON_KEY")
 )
-
-# Test query
-response = supabase.table("Department").select("*").execute()
-print(response.data)
-
 app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
 app.secret_key = "my_secret_key"
 
@@ -24,6 +19,9 @@ db = SQLAlchemy(app)
 
 # Tables the user is allowed to browse
 ALLOWED_TABLES = [
+    "maintenance_overview",
+    "employee_overview",
+    "asset_maintenance_history",
     "Maintenance_task",
     "Asset",
     "Maintenance_type",
@@ -32,7 +30,6 @@ ALLOWED_TABLES = [
     "Position",
     "Employee",
 ]
-
 # ── Routes ──────────────────────────────────────────
 
 @app.route("/")
@@ -83,18 +80,22 @@ def dashboard():
     user_id      = session["user"]["id"]
     access_token = session["user"]["access_token"]
 
-    # Get requested table, default to Maintenance_task
-    active_table = request.args.get("table", "Maintenance_task")
+    active_table = request.args.get("table", "maintenance_overview")
 
-    # Prevent querying tables outside the allowed list
     if active_table not in ALLOWED_TABLES:
-        active_table = "Maintenance_task"
+        active_table = "maintenance_overview"
 
     authed_client = create_client(
         os.getenv("SUPABASE_URL"),
         os.getenv("SUPABASE_ANON_KEY")
     )
-    authed_client.auth.set_session(access_token, "")
+
+    try:
+        authed_client.auth.set_session(access_token, "")
+    except Exception:
+        # Token expired — clear session and send back to login
+        session.clear()
+        return redirect(url_for("login"))
 
     # Get employee record
     employee = (
@@ -107,7 +108,6 @@ def dashboard():
     if not employee.data:
         return "No employee record found for this user"
 
-    # Fetch the selected table
     table_data = (
         authed_client.table(active_table)
         .select("*")
@@ -121,7 +121,6 @@ def dashboard():
         tables=ALLOWED_TABLES,
         active_table=active_table
     )
-
 
 if __name__ == "__main__":
     app.run(debug=True)
