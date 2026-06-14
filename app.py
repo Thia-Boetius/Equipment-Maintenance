@@ -3,18 +3,16 @@ from flask import Flask, render_template, url_for, session, redirect, request, f
 from supabase import create_client
 from dotenv import load_dotenv
 import os
+import json
+from groq import Groq
 
+load_dotenv()  # reads your .env file
 load_dotenv()  # reads your .env file
 
 supabase = create_client(
     os.getenv("SUPABASE_URL"),
     os.getenv("SUPABASE_ANON_KEY")
 )
-
-# Test query
-response = supabase.table("Department").select("*").execute()
-print(response.data)
-
 app = Flask(__name__, template_folder='app/templates', static_folder='app/static')
 app.secret_key = "my_secret_key"
 
@@ -24,6 +22,9 @@ db = SQLAlchemy(app)
 
 # Tables the user is allowed to browse
 ALLOWED_TABLES = [
+    "maintenance_overview",
+    "employee_overview",
+    "asset_maintenance_history",
     "Maintenance_task",
     "Asset",
     "Maintenance_type",
@@ -32,7 +33,6 @@ ALLOWED_TABLES = [
     "Position",
     "Employee",
 ]
-
 # ── Routes ──────────────────────────────────────────
 
 @app.route("/")
@@ -61,7 +61,7 @@ def login():
             return redirect(url_for("dashboard"))
 
         except Exception as e:
-            print("LOGIN ERROR:", e)
+            print("LOGIN ERROR:", str(e))  # 👈 wrap in str()
             flash("Ongeldig e-mailadres of wachtwoord.")
             return redirect(url_for("login"))
 
@@ -75,6 +75,152 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/reports")
+def reports():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    access_token = session["user"]["access_token"]
+    user_id      = session["user"]["id"]
+
+    authed_client = create_client(
+        os.getenv("SUPABASE_URL"),
+        os.getenv("SUPABASE_ANON_KEY")
+    )
+    authed_client.auth.set_session(access_token, "")
+
+    employee = (
+        authed_client.table("Employee")
+        .select("*")
+        .eq("user_UID", user_id)
+        .execute()
+    )
+
+    if not employee.data:
+        return "No employee record found for this user"
+
+    assets     = authed_client.table("Asset").select("*").execute().data or []
+    tasks      = authed_client.table("Maintenance_task").select("*").execute().data or []
+    statuses   = authed_client.table("Status").select("*").execute().data or []
+
+    return render_template(
+        "reports.html",
+        employee=employee.data[0],
+        assets=assets,
+        tasks=tasks,
+        statuses=statuses,
+    )
+
+
+@app.route("/analytics")
+def analytics():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    access_token = session["user"]["access_token"]
+    user_id      = session["user"]["id"]
+
+    authed_client = create_client(
+        os.getenv("SUPABASE_URL"),
+        os.getenv("SUPABASE_ANON_KEY")
+    )
+    authed_client.auth.set_session(access_token, "")
+
+    employee = (
+        authed_client.table("Employee")
+        .select("*")
+        .eq("user_UID", user_id)
+        .execute()
+    )
+    if not employee.data:
+        return "No employee record found for this user"
+
+    assets      = authed_client.table("Asset").select("*").execute().data or []
+    tasks       = authed_client.table("Maintenance_task").select("*").execute().data or []
+    statuses    = authed_client.table("Status").select("*").execute().data or []
+    departments = authed_client.table("Department").select("*").execute().data or []
+    maint_types = authed_client.table("Maintenance_type").select("*").execute().data or []
+
+    # Count assets per status
+    status_map = {s.get("Status_ID") or s.get("id"): s.get("Status_name") or s.get("name", "Unknown")
+                  for s in statuses}
+    assets_by_status = {}
+    for a in assets:
+        sid = a.get("Status_ID")
+        label = status_map.get(sid, str(sid) if sid else "Unknown")
+        assets_by_status[label] = assets_by_status.get(label, 0) + 1
+
+    # Count tasks per maintenance type
+    type_map = {t.get("Maintenance_type_ID") or t.get("id"): t.get("Type_name") or t.get("name", "Unknown")
+                for t in maint_types}
+    tasks_by_type = {}
+    for t in tasks:
+        tid = t.get("Maintenance_type_ID")
+        label = type_map.get(tid, str(tid) if tid else "Unknown")
+        tasks_by_type[label] = tasks_by_type.get(label, 0) + 1
+
+    data_summary = json.dumps({
+        "total_assets":       len(assets),
+        "total_tasks":        len(tasks),
+        "departments":        [d.get("Department_name") or d.get("name") for d in departments],
+        "statuses":           [s.get("Status_name") or s.get("name") for s in statuses],
+        "maintenance_types":  [m.get("Type_name") or m.get("name") for m in maint_types],
+        "assets_by_status":   assets_by_status,
+        "tasks_by_type":      tasks_by_type,
+        "sample_assets":      assets[:5],
+        "sample_tasks":       tasks[:5],
+    }, default=str)
+
+    ai_analyses = []
+    try:
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            max_tokens=1024,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an equipment maintenance analyst. "
+                        "Analyze the JSON data and return ONLY a JSON array of exactly 5 insight objects. "
+                        "Each object must have these fields: "
+                        "\"title\" (short heading), "
+                        "\"insight\" (2-3 sentence finding), "
+                        "\"recommendation\" (1-2 sentence action), "
+                        "\"severity\" (one of: info, warning, critical). "
+                        "Return raw JSON only — no markdown, no code fences, no explanation."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": f"Analyze this equipment maintenance data:\n{data_summary}"
+                }
+            ]
+        )
+        raw = completion.choices[0].message.content
+        start, end = raw.find("["), raw.rfind("]") + 1
+        if start >= 0 and end > start:
+            ai_analyses = json.loads(raw[start:end])
+    except Exception as e:
+        print(f"AI analysis error: {e}")
+        ai_analyses = [{
+            "title": "Analysis unavailable",
+            "insight": "Could not generate AI analysis. Check that GROQ_API_KEY is set in your .env file.",
+            "recommendation": "Add GROQ_API_KEY=<your-key> to .env and restart the server.",
+            "severity": "info"
+        }]
+
+    return render_template(
+        "analytics.html",
+        employee=employee.data[0],
+        assets=assets,
+        tasks=tasks,
+        statuses=statuses,
+        departments=departments,
+        ai_analyses=ai_analyses,
+    )
+
+
 @app.route("/dashboard")
 def dashboard():
     if "user" not in session:
@@ -83,18 +229,22 @@ def dashboard():
     user_id      = session["user"]["id"]
     access_token = session["user"]["access_token"]
 
-    # Get requested table, default to Maintenance_task
-    active_table = request.args.get("table", "Maintenance_task")
+    active_table = request.args.get("table", "maintenance_overview")
 
-    # Prevent querying tables outside the allowed list
     if active_table not in ALLOWED_TABLES:
-        active_table = "Maintenance_task"
+        active_table = "maintenance_overview"
 
     authed_client = create_client(
         os.getenv("SUPABASE_URL"),
         os.getenv("SUPABASE_ANON_KEY")
     )
-    authed_client.auth.set_session(access_token, "")
+
+    try:
+        authed_client.auth.set_session(access_token, "")
+    except Exception:
+        # Token expired — clear session and send back to login
+        session.clear()
+        return redirect(url_for("login"))
 
     # Get employee record
     employee = (
@@ -107,7 +257,6 @@ def dashboard():
     if not employee.data:
         return "No employee record found for this user"
 
-    # Fetch the selected table
     table_data = (
         authed_client.table(active_table)
         .select("*")
@@ -121,7 +270,6 @@ def dashboard():
         tables=ALLOWED_TABLES,
         active_table=active_table
     )
-
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Maintix – Analytics</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --navy: #1a2744;
+            --orange: #f26522;
+            --orange-light: #fff0e8;
+            --bg: #f0f2f7;
+            --white: #ffffff;
+            --text: #1a2744;
+            --muted: #8a93a8;
+            --border: #e4e8f0;
+            --sidebar-w: 230px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--navy);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            z-index: 100;
+        }
+        .sidebar-logo {
+            padding: 1.5rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: var(--orange);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .logo-text { color: white; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+        .sidebar-nav {
+            flex: 1;
+            padding: 1rem 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.65rem 0.85rem;
+            border-radius: 8px;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
+        .nav-item.active { background: var(--orange); color: white; }
+        .nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+        .sidebar-footer {
+            padding: 1rem 0.75rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .logout-btn {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.65rem 0.85rem; border-radius: 8px;
+            color: rgba(255,255,255,0.5); text-decoration: none;
+            font-size: 0.95rem; font-weight: 500; transition: all 0.15s;
+        }
+        .logout-btn:hover { color: white; background: rgba(255,255,255,0.08); }
+
+        /* ── Main ── */
+        .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+
+        .topbar {
+            background: var(--white);
+            padding: 0.9rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 50;
+        }
+        .page-title { font-size: 1.4rem; font-weight: 700; }
+        .topbar-right { display: flex; align-items: center; gap: 1rem; }
+        .user-chip { display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.9rem; }
+        .avatar {
+            width: 34px; height: 34px; background: var(--orange); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 0.85rem;
+        }
+        .ai-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.3rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        /* ── Content ── */
+        .content { padding: 2rem; flex: 1; }
+
+        /* ── Stats row ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.25rem 1.5rem;
+        }
+        .stat-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+        .stat-value { font-size: 2rem; font-weight: 700; margin-top: 0.25rem; }
+        .stat-card.orange { border-left: 4px solid var(--orange); }
+
+        /* ── Section heading ── */
+        .section-heading {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+        }
+        .section-heading .dot {
+            width: 8px; height: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+        }
+
+        /* ── AI Insights grid ── */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .insight-card {
+            background: var(--white);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            transition: box-shadow 0.15s;
+        }
+        .insight-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+
+        .insight-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        .insight-title {
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+        .severity-pill {
+            flex-shrink: 0;
+            display: inline-block;
+            padding: 0.25rem 0.65rem;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .severity-info    { background: #e0f2fe; color: #0369a1; }
+        .severity-warning { background: #fff7ed; color: #c2410c; }
+        .severity-critical{ background: #fee2e2; color: #b91c1c; }
+
+        .insight-text {
+            font-size: 0.9rem;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .recommendation-box {
+            background: #f8fafc;
+            border-left: 3px solid var(--orange);
+            border-radius: 0 8px 8px 0;
+            padding: 0.65rem 0.85rem;
+        }
+        .recommendation-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--orange);
+            margin-bottom: 0.25rem;
+        }
+        .recommendation-text {
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        /* ── Severity strip on left of card ── */
+        .insight-card.sev-warning  { border-left: 4px solid #f97316; }
+        .insight-card.sev-critical { border-left: 4px solid #ef4444; }
+        .insight-card.sev-info     { border-left: 4px solid #3b82f6; }
+
+        .no-data { text-align: center; padding: 3rem; color: var(--muted); font-size: 0.95rem; }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <div class="logo-icon"><img src="../static/img/image.png" style="width:100%;height:100%;object-fit:cover;"></div>
+        <span class="logo-text">Maintix</span>
+    </div>
+    <nav class="sidebar-nav">
+        <a href="{{ url_for('dashboard', table='Asset') }}" class="nav-item">
+            <span class="nav-icon">🏠</span> Dashboard
+        </a>
+        <a href="{{ url_for('dashboard', table='Asset') }}" class="nav-item">
+            <span class="nav-icon">⚙️</span> Equipment
+        </a>
+        <a href="{{ url_for('dashboard', table='Maintenance_task') }}" class="nav-item">
+            <span class="nav-icon">🔧</span> Maintenance
+        </a>
+        <a href="{{ url_for('reports') }}" class="nav-item">
+            <span class="nav-icon">📊</span> Reports
+        </a>
+        <a href="{{ url_for('dashboard', table='Maintenance_type') }}" class="nav-item">
+            <span class="nav-icon">📋</span> Log History
+        </a>
+        <a href="{{ url_for('analytics') }}" class="nav-item active">
+            <span class="nav-icon">📈</span> Analytics
+        </a>
+        <a href="{{ url_for('dashboard', table='Position') }}" class="nav-item">
+            <span class="nav-icon">🔩</span> Settings
+        </a>
+    </nav>
+    <div class="sidebar-footer">
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+            <span class="nav-icon">🚪</span> Log out
+        </a>
+    </div>
+</aside>
+
+<div class="main">
+    <header class="topbar">
+        <h1 class="page-title">Analytics</h1>
+        <div class="topbar-right">
+            <span class="ai-badge">✦ AI-powered</span>
+            <div class="user-chip">
+                <div class="avatar">{{ employee.First_name[0] }}</div>
+                {{ employee.First_name }} ▾
+            </div>
+        </div>
+    </header>
+
+    <div class="content">
+
+        <!-- Summary stats -->
+        <div class="stats-row">
+            <div class="stat-card orange">
+                <div class="stat-label">Total Assets</div>
+                <div class="stat-value">{{ assets | length }}</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-label">Maintenance Tasks</div>
+                <div class="stat-value">{{ tasks | length }}</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-label">Departments</div>
+                <div class="stat-value">{{ departments | length }}</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-label">Status Types</div>
+                <div class="stat-value">{{ statuses | length }}</div>
+            </div>
+        </div>
+
+        <!-- AI Insights -->
+        <div class="section-heading">
+            <div class="dot"></div>
+            AI-Generated Insights
+        </div>
+
+        {% if ai_analyses %}
+        <div class="insights-grid">
+            {% for item in ai_analyses %}
+            {% set sev = item.get('severity', 'info') %}
+            <div class="insight-card sev-{{ sev }}">
+                <div class="insight-header">
+                    <div class="insight-title">{{ item.get('title', 'Insight') }}</div>
+                    <span class="severity-pill severity-{{ sev }}">{{ sev }}</span>
+                </div>
+                <p class="insight-text">{{ item.get('insight', '') }}</p>
+                {% if item.get('recommendation') %}
+                <div class="recommendation-box">
+                    <div class="recommendation-label">Recommendation</div>
+                    <div class="recommendation-text">{{ item.get('recommendation', '') }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-data">No AI analyses available.</p>
+        {% endif %}
+
+    </div>
+</div>
+
+</body>
+</html>
