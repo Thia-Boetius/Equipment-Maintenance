@@ -271,5 +271,111 @@ def dashboard():
         active_table=active_table
     )
 
+@app.route("/register-asset", methods=["GET", "POST"])
+def register_asset():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    access_token = session["user"]["access_token"]
+    user_id      = session["user"]["id"]
+
+    authed_client = create_client(
+        os.getenv("SUPABASE_URL"),
+        os.getenv("SUPABASE_ANON_KEY")
+    )
+    authed_client.auth.set_session(access_token, "")
+
+    employee = (
+        authed_client.table("Employee")
+        .select("*")
+        .eq("user_UID", user_id)
+        .execute()
+    )
+    if not employee.data:
+        return "No employee record found for this user"
+
+    if request.method == "POST":
+        new_asset = {
+            "Name":           request.form["name"],
+            "Year":           request.form.get("year") or None,
+            "Brand":          request.form.get("brand") or None,
+            "Model":          request.form.get("model") or None,
+            "chasis_number":  request.form.get("chasis_number") or None,
+            "plaat_nummer":   request.form.get("plaat_nummer") or None,
+            "kilometerstand": request.form.get("kilometerstand") or None,
+            "Status":         request.form.get("status") or None,
+            "type_id":        request.form.get("type_id") or None,
+        }
+        # leeg -> None, en lege strings niet meesturen
+        new_asset = {k: v for k, v in new_asset.items() if v not in (None, "")}
+
+        try:
+            authed_client.table("Asset").insert(new_asset).execute()
+            flash("Apparatuur succesvol geregistreerd.")
+            return redirect(url_for("dashboard", table="Asset"))
+        except Exception as e:
+            flash(f"Fout bij registreren van apparatuur: {str(e)}")
+
+    return render_template(
+        "register_asset.html",
+        employee=employee.data[0],
+      
+    )
+
+
+@app.route("/plan-maintenance", methods=["GET", "POST"])
+def plan_maintenance():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    access_token = session["user"]["access_token"]
+    user_id      = session["user"]["id"]
+
+    authed_client = create_client(
+        os.getenv("SUPABASE_URL"),
+        os.getenv("SUPABASE_ANON_KEY")
+    )
+    authed_client.auth.set_session(access_token, "")
+
+    employee = (
+        authed_client.table("Employee")
+        .select("*")
+        .eq("user_UID", user_id)
+        .execute()
+    )
+    if not employee.data:
+        return "No employee record found for this user"
+
+    assets = authed_client.table("Asset").select("Asset_ID, Name").execute().data or []
+
+    if request.method == "POST":
+        new_schedule = {
+            "Asset_id":         request.form.get("asset_id"),
+            "maintenance_date": request.form.get("maintenance_date") or None,
+            "next_maintenance": request.form.get("next_maintenance") or None,
+        }
+        new_schedule = {k: v for k, v in new_schedule.items() if v not in (None, "")}
+
+        try:
+            authed_client.table("schedule_maintenance").insert(new_schedule).execute()
+            flash("Onderhoud succesvol gepland.")
+            return redirect(url_for("plan_maintenance"))
+        except Exception as e:
+            flash(f"Fout bij plannen van onderhoud: {str(e)}")
+
+    schedules = (
+        authed_client.table("schedule_maintenance")
+        .select("*, Asset(Name)")
+        .order("maintenance_id", desc=True)
+        .execute()
+    ).data or []
+
+    return render_template(
+        "plan_maintenance.html",
+        employee=employee.data[0],
+        assets=assets,
+        schedules=schedules,
+    )
+
 if __name__ == "__main__":
     app.run(debug=True)
