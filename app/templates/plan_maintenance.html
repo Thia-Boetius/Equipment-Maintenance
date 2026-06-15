@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% set active_page = 'plan_maintenance' %}
+{% block page_title %}Onderhoud plannen{% endblock %}
+{% block topbar_extra %}{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <span class="card-title">Nieuw onderhoud plannen</span>
+    </div>
+
+    <form method="POST">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="asset_id">Apparatuur *</label>
+                <select id="asset_id" name="asset_id" required>
+                    <option value="">— Selecteer apparatuur —</option>
+                    {% for asset in assets %}
+                    <option value="{{ asset.Asset_ID }}">{{ asset.Name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="maintenance_date">Onderhoudsdatum</label>
+                <input type="date" id="maintenance_date" name="maintenance_date">
+            </div>
+
+            <div class="form-group">
+                <label for="next_maintenance">Volgend onderhoud</label>
+                <input type="date" id="next_maintenance" name="next_maintenance">
+            </div>
+        </div>
+
+        <button type="submit" class="btn-primary">Onderhoud plannen</button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Geplande onderhoudsbeurten</span>
+    </div>
+
+    <div class="table-wrap">
+        {% if schedules %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Apparatuur</th>
+                    <th>Onderhoudsdatum</th>
+                    <th>Volgend onderhoud</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in schedules %}
+                <tr>
+                    <td>{{ item.Asset.Name if item.Asset else '—' }}</td>
+                    <td>
+                        {% if item.maintenance_date %}
+                            {{ item.maintenance_date }}
+                        {% else %}
+                            <span style="color: var(--muted)">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.next_maintenance %}
+                            {{ item.next_maintenance }}
+                        {% else %}
+                            <span style="color: var(--muted)">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-data">Nog geen onderhoud gepland.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
