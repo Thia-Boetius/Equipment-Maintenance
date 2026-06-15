@@ -95,8 +95,8 @@
            class="nav-item {{ 'active' if active_page == 'dashboard' else '' }}">
             <span class="nav-icon">🏠</span> Dashboard
         </a>
-        <a href="{{ url_for('dashboard', table='Asset') }}"
-           class="nav-item {{ 'active' if active_page == 'equipment' else '' }}">
+        <a href="{{ url_for('dashboard', table='asset_maintenance_summary') }}"
+        class="nav-item {{ 'active' if active_page == 'equipment' else '' }}">
             <span class="nav-icon">⚙️</span> Equipment
         </a>
         <a href="{{ url_for('register_asset') }}"
@@ -144,6 +144,7 @@
                 <input type="text" id="searchInput" placeholder="Search..." oninput="filterTable()">
             </div>
             {% endblock %}
+            <span style="font-size:1.3rem; cursor:pointer;" title="Notifications">🔔</span>
             <div class="user-chip">
                 <div class="avatar">{{ employee.First_name[0] }}</div>
                 {{ employee.First_name }} ▾
