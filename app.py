@@ -25,6 +25,7 @@ ALLOWED_TABLES = [
     "maintenance_overview",
     "employee_overview",
     "asset_maintenance_history",
+    "asset_maintenance_summary",  # ← add this
     "Maintenance_task",
     "Asset",
     "Maintenance_type",
