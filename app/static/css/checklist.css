@@ -1,0 +1,15 @@
+.checklist-card { background: var(--white); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1.25rem; overflow: hidden; }
+.checklist-card-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); background: #fafbfd; }
+.machine-label { font-size: 1rem; font-weight: 700; }
+.machine-sub { font-size: .85rem; color: var(--muted); margin-top: .1rem; }
+.checklist-row { display: flex; align-items: center; gap: 1rem; padding: .85rem 1.5rem; border-bottom: 1px solid var(--border); font-size: .92rem; }
+.checklist-row:last-child { border-bottom: none; }
+.checklist-row.done { opacity: .55; }
+.check-icon { font-size: 1.15rem; width: 22px; flex-shrink: 0; text-align: center; }
+.check-icon.done { color: #16a34a; }
+.check-icon.pending { color: var(--muted); }
+.ci-type { width: 160px; flex-shrink: 0; font-weight: 500; }
+.ci-date { width: 110px; flex-shrink: 0; color: var(--muted); font-size: .85rem; }
+.ci-assigned { width: 150px; flex-shrink: 0; }
+.ci-remark { flex: 1; color: var(--muted); font-size: .85rem; white-space: normal; }
+.summary-row { display: flex; gap: .5rem; align-items: center; }
