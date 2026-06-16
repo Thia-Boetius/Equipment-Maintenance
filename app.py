@@ -92,7 +92,7 @@ def reports():
     employee = (
         authed_client.table("Employee")
         .select("*")
-        .eq("user_UID", user_id)
+        .eq("User_UID", user_id)
         .execute()
     )
 
@@ -129,7 +129,7 @@ def analytics():
     employee = (
         authed_client.table("Employee")
         .select("*")
-        .eq("user_UID", user_id)
+        .eq("User_UID", user_id)
         .execute()
     )
     if not employee.data:
@@ -250,7 +250,7 @@ def dashboard():
     employee = (
         authed_client.table("Employee")
         .select("*")
-        .eq("user_UID", user_id)
+        .eq("User_UID", user_id)
         .execute()
     )
 
