@@ -69,12 +69,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-    function filterTable() {
-        const input = document.getElementById("searchInput").value.toLowerCase();
-        document.querySelectorAll("#dataTable tbody tr").forEach(row => {
-            row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
-        });
-    }
-</script>
+<script src="{{ url_for('static', filename='js/filter-table.js') }}"></script>
 {% endblock %}
