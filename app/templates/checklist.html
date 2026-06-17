@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% set active_page = 'checklist' %}
+
+{% block page_title %}Checklist{% endblock %}
+
+{% block topbar_extra %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/checklist.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- Header stats -->
+<div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+    <div class="card" style="padding:.9rem 1.25rem;border-left:4px solid var(--orange);flex:0 0 auto;">
+        <div style="font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Total Tasks</div>
+        <div style="font-size:1.6rem;font-weight:700;">{{ total }}</div>
+    </div>
+    <div class="card" style="padding:.9rem 1.25rem;border-left:4px solid #22c55e;flex:0 0 auto;">
+        <div style="font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Machines</div>
+        <div style="font-size:1.6rem;font-weight:700;">{{ groups | length }}</div>
+    </div>
+</div>
+
+{% if groups %}
+    {% for group in groups %}
+    <div class="checklist-card">
+        <div class="checklist-card-header">
+            <div>
+                <div class="machine-label">{{ group.machine_number }}</div>
+                <div class="machine-sub">
+                    {{ group.model }}{% if group.brand and group.brand != '—' %} &middot; {{ group.brand }}{% endif %}
+                </div>
+            </div>
+            <div class="summary-row">
+                {% set done_count = group.tasks | selectattr('task_status', 'search', '(?i)complet|done|active') | list | length %}
+                {% set pend_count = group.tasks | length - done_count %}
+                {% if done_count %}<span class="badge badge-green">{{ done_count }} done</span>{% endif %}
+                {% if pend_count %}<span class="badge badge-orange">{{ pend_count }} pending</span>{% endif %}
+            </div>
+        </div>
+
+        <!-- Column headers -->
+        <div style="display:flex;gap:1rem;padding:.5rem 1.5rem;font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:#fafbfd;">
+            <span style="width:22px;flex-shrink:0;"></span>
+            <span style="width:160px;flex-shrink:0;">Type</span>
+            <span style="width:110px;flex-shrink:0;">Date</span>
+            <span style="width:150px;flex-shrink:0;">Assigned To</span>
+            <span style="flex:1;">Remark</span>
+            <span style="width:90px;flex-shrink:0;text-align:right;">Price</span>
+        </div>
+
+        {% for t in group.tasks %}
+        {% set sl = t.task_status | lower %}
+        {% set is_done = 'complet' in sl or 'done' in sl or 'active' in sl %}
+        <div class="checklist-row {{ 'done' if is_done else '' }}">
+            <span class="check-icon {{ 'done' if is_done else 'pending' }}">
+                {{ '✓' if is_done else '○' }}
+            </span>
+            <span class="ci-type">{{ t.type }}</span>
+            <span class="ci-date">{{ t.Date }}</span>
+            <span class="ci-assigned">{{ t.assigned_to }}</span>
+            <span class="ci-remark">{{ t.Remark or '—' }}</span>
+            <span style="width:90px;flex-shrink:0;text-align:right;font-size:.85rem;">
+                {% if t.task_status %}
+                  {% set sl2 = t.task_status | lower %}
+                  {% if 'complet' in sl2 or 'done' in sl2 %}
+                    <span class="badge badge-green" style="font-size:.72rem;">{{ t.task_status }}</span>
+                  {% elif 'cancel' in sl2 or 'fail' in sl2 %}
+                    <span class="badge badge-red" style="font-size:.72rem;">{{ t.task_status }}</span>
+                  {% elif 'pending' in sl2 or 'open' in sl2 %}
+                    <span class="badge badge-orange" style="font-size:.72rem;">{{ t.task_status }}</span>
+                  {% else %}
+                    <span class="badge badge-gray" style="font-size:.72rem;">{{ t.task_status }}</span>
+                  {% endif %}
+                {% endif %}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+{% else %}
+    <p class="no-data">No maintenance tasks found</p>
+{% endif %}
+
+{% endblock %}

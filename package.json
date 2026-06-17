@@ -9,5 +9,10 @@
   },
   "keywords": ["equipment", "maintenance", "flask"],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.6.5"
+  }
 }

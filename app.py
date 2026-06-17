@@ -6,8 +6,7 @@ import os
 import json
 from groq import Groq
 
-load_dotenv()  # reads your .env file
-load_dotenv()  # reads your .env file
+load_dotenv()
 
 supabase = create_client(
     os.getenv("SUPABASE_URL"),
@@ -20,26 +19,72 @@ app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///user.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Tables the user is allowed to browse
 ALLOWED_TABLES = [
-    "maintenance_overview",
-    "employee_overview",
-    "asset_maintenance_history",
-    "asset_maintenance_summary",  # ← add this
-    "Maintenance_task",
-    "Asset",
-    "Maintenance_type",
-    "Status",
-    "Department",
-    "Position",
-    "Employee",
+    "Machine", "Category", "Status", "Brand",
+    "Maintenance_task", "Department", "Position", "Employee",
 ]
-# ── Routes ──────────────────────────────────────────
+
+class AuthExpiredError(Exception):
+    pass
+
+@app.errorhandler(AuthExpiredError)
+def handle_auth_expired(e):
+    session.clear()
+    return redirect(url_for("login"))
+
+# ── Shared helpers ───────────────────────────────────────────────────────────
+
+def _authed_client(access_token):
+    refresh_token = session.get("user", {}).get("refresh_token", "")
+    c = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_ANON_KEY"))
+    try:
+        c.auth.set_session(access_token, refresh_token)
+    except Exception:
+        raise AuthExpiredError()
+    return c
+
+def _lookup_maps(client):
+    brands     = client.table("Brand").select("*").execute().data or []
+    statuses   = client.table("Status").select("*").execute().data or []
+    categories = client.table("Category").select("*").execute().data or []
+    employees  = client.table("Employee").select("*").execute().data or []
+    return (
+        {b["Brand_ID"]:    b["Name"]        for b in brands},
+        {s["Status_ID"]:   s["Description"] for s in statuses},
+        {c["Category_ID"]: c["Name"]        for c in categories},
+        {e["Employee_ID"]: f"{e['First_name']} {e['Last_name']}" for e in employees},
+        statuses,
+        categories,
+    )
+
+def _enrich_machines(machines, brand_map, status_map, category_map):
+    return [{**m,
+        "brand":    brand_map.get(m.get("Brand_ID"), "—"),
+        "status":   status_map.get(m.get("Status_ID"), "—"),
+        "category": category_map.get(m.get("Category_ID"), "—"),
+    } for m in machines]
+
+def _enrich_tasks(tasks, machines, brand_map, status_map, category_map, employee_map):
+    machine_map = {m["Machine_ID"]: m for m in machines}
+    result = []
+    for t in tasks:
+        m = machine_map.get(t.get("Machine_ID"), {})
+        result.append({**t,
+            "machine_number": m.get("Machine_number", "—"),
+            "model":          m.get("Model") or "—",
+            "brand":          brand_map.get(m.get("Brand_ID"), "—"),
+            "type":           category_map.get(t.get("Type_ID"), "—"),
+            "task_status":    status_map.get(t.get("Status_ID"), "—"),
+            "assigned_to":    employee_map.get(t.get("Assigned_to"), "Unassigned"),
+        })
+    return result
+
+# ── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def home():
     if "user" in session:
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("dashboard_home"))
     return redirect(url_for("login"))
 
 
@@ -48,24 +93,21 @@ def login():
     if request.method == "POST":
         email    = request.form["email"]
         password = request.form["password"]
-
         try:
             response = supabase.auth.sign_in_with_password({
-                "email": email,
-                "password": password
+                "email": email, "password": password
             })
             session["user"] = {
-                "id":           response.user.id,
-                "email":        response.user.email,
-                "access_token": response.session.access_token,
+                "id":            response.user.id,
+                "email":         response.user.email,
+                "access_token":  response.session.access_token,
+                "refresh_token": response.session.refresh_token,
             }
-            return redirect(url_for("dashboard"))
-
+            return redirect(url_for("dashboard_home"))
         except Exception as e:
-            print("LOGIN ERROR:", str(e))  # 👈 wrap in str()
+            print("LOGIN ERROR:", str(e))
             flash("Ongeldig e-mailadres of wachtwoord.")
             return redirect(url_for("login"))
-
     return render_template("login.html")
 
 
@@ -76,106 +118,195 @@ def logout():
     return redirect(url_for("login"))
 
 
+# ── Dashboard Home ───────────────────────────────────────────────────────────
+
+@app.route("/home")
+def dashboard_home():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    user_id      = session["user"]["id"]
+    access_token = session["user"]["access_token"]
+    client       = _authed_client(access_token)
+
+    employee = client.table("Employee").select("*").eq("User_UID", user_id).execute()
+    if not employee.data:
+        return "No employee record found for this user"
+
+    brand_map, status_map, category_map, employee_map, statuses, categories = _lookup_maps(client)
+    machines = client.table("Machine").select("*").execute().data or []
+    tasks    = client.table("Maintenance_task").select("*").order("Date", desc=True).execute().data or []
+
+    enriched_tasks = _enrich_tasks(tasks, machines, brand_map, status_map, category_map, employee_map)
+
+    machines_by_status = {}
+    for m in _enrich_machines(machines, brand_map, status_map, category_map):
+        s = m["status"]
+        machines_by_status[s] = machines_by_status.get(s, 0) + 1
+
+    tasks_by_status = {}
+    for t in enriched_tasks:
+        s = t["task_status"]
+        tasks_by_status[s] = tasks_by_status.get(s, 0) + 1
+
+    return render_template(
+        "dashboard_home.html",
+        employee=employee.data[0],
+        active_page="dashboard",
+        total_machines=len(machines),
+        total_tasks=len(tasks),
+        machines_by_status=machines_by_status,
+        tasks_by_status=tasks_by_status,
+        recent_tasks=enriched_tasks[:10],
+    )
+
+
+# ── Maintenance ──────────────────────────────────────────────────────────────
+
+@app.route("/maintenance")
+def maintenance():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    user_id      = session["user"]["id"]
+    access_token = session["user"]["access_token"]
+    client       = _authed_client(access_token)
+
+    employee = client.table("Employee").select("*").eq("User_UID", user_id).execute()
+    if not employee.data:
+        return "No employee record found for this user"
+
+    brand_map, status_map, category_map, employee_map, statuses, categories = _lookup_maps(client)
+    machines = client.table("Machine").select("*").execute().data or []
+    tasks    = client.table("Maintenance_task").select("*").order("Date", desc=True).execute().data or []
+
+    enriched_tasks = _enrich_tasks(tasks, machines, brand_map, status_map, category_map, employee_map)
+
+    return render_template(
+        "maintenance.html",
+        employee=employee.data[0],
+        active_page="maintenance",
+        tasks=enriched_tasks,
+        total=len(enriched_tasks),
+    )
+
+
+# ── Checklist ────────────────────────────────────────────────────────────────
+
+@app.route("/checklist")
+def checklist():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    user_id      = session["user"]["id"]
+    access_token = session["user"]["access_token"]
+    client       = _authed_client(access_token)
+
+    employee = client.table("Employee").select("*").eq("User_UID", user_id).execute()
+    if not employee.data:
+        return "No employee record found for this user"
+
+    brand_map, status_map, category_map, employee_map, statuses, categories = _lookup_maps(client)
+    machines = client.table("Machine").select("*").execute().data or []
+    tasks    = client.table("Maintenance_task").select("*").order("Date", desc=True).execute().data or []
+
+    enriched_tasks = _enrich_tasks(tasks, machines, brand_map, status_map, category_map, employee_map)
+
+    grouped = {}
+    for t in enriched_tasks:
+        key = t.get("Machine_ID") or 0
+        if key not in grouped:
+            grouped[key] = {
+                "machine_number": t["machine_number"],
+                "model":          t["model"],
+                "brand":          t["brand"],
+                "tasks":          [],
+            }
+        grouped[key]["tasks"].append(t)
+
+    return render_template(
+        "checklist.html",
+        employee=employee.data[0],
+        active_page="checklist",
+        groups=list(grouped.values()),
+        total=len(tasks),
+    )
+
+
+# ── Reports ──────────────────────────────────────────────────────────────────
+
 @app.route("/reports")
 def reports():
     if "user" not in session:
         return redirect(url_for("login"))
 
-    access_token = session["user"]["access_token"]
     user_id      = session["user"]["id"]
+    access_token = session["user"]["access_token"]
+    client       = _authed_client(access_token)
 
-    authed_client = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_ANON_KEY")
-    )
-    authed_client.auth.set_session(access_token, "")
-
-    employee = (
-        authed_client.table("Employee")
-        .select("*")
-        .eq("user_UID", user_id)
-        .execute()
-    )
-
+    employee = client.table("Employee").select("*").eq("User_UID", user_id).execute()
     if not employee.data:
         return "No employee record found for this user"
 
-    assets     = authed_client.table("Asset").select("*").execute().data or []
-    tasks      = authed_client.table("Maintenance_task").select("*").execute().data or []
-    statuses   = authed_client.table("Status").select("*").execute().data or []
+    brand_map, status_map, category_map, employee_map, statuses, categories = _lookup_maps(client)
+    machines = client.table("Machine").select("*").execute().data or []
+    tasks    = client.table("Maintenance_task").select("*").execute().data or []
 
     return render_template(
         "reports.html",
         employee=employee.data[0],
-        assets=assets,
+        assets=machines,
         tasks=tasks,
         statuses=statuses,
     )
 
+
+# ── Analytics ────────────────────────────────────────────────────────────────
 
 @app.route("/analytics")
 def analytics():
     if "user" not in session:
         return redirect(url_for("login"))
 
-    access_token = session["user"]["access_token"]
     user_id      = session["user"]["id"]
+    access_token = session["user"]["access_token"]
+    client       = _authed_client(access_token)
 
-    authed_client = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_ANON_KEY")
-    )
-    authed_client.auth.set_session(access_token, "")
-
-    employee = (
-        authed_client.table("Employee")
-        .select("*")
-        .eq("user_UID", user_id)
-        .execute()
-    )
+    employee = client.table("Employee").select("*").eq("User_UID", user_id).execute()
     if not employee.data:
         return "No employee record found for this user"
 
-    assets      = authed_client.table("Asset").select("*").execute().data or []
-    tasks       = authed_client.table("Maintenance_task").select("*").execute().data or []
-    statuses    = authed_client.table("Status").select("*").execute().data or []
-    departments = authed_client.table("Department").select("*").execute().data or []
-    maint_types = authed_client.table("Maintenance_type").select("*").execute().data or []
+    brand_map, status_map, category_map, employee_map, statuses, categories = _lookup_maps(client)
+    machines    = client.table("Machine").select("*").execute().data or []
+    tasks       = client.table("Maintenance_task").select("*").execute().data or []
+    departments = client.table("Department").select("*").execute().data or []
 
-    # Count assets per status
-    status_map = {s.get("Status_ID") or s.get("id"): s.get("Status_name") or s.get("name", "Unknown")
-                  for s in statuses}
-    assets_by_status = {}
-    for a in assets:
-        sid = a.get("Status_ID")
-        label = status_map.get(sid, str(sid) if sid else "Unknown")
-        assets_by_status[label] = assets_by_status.get(label, 0) + 1
+    machines_by_status = {}
+    for m in machines:
+        label = status_map.get(m.get("Status_ID"), "Unknown")
+        machines_by_status[label] = machines_by_status.get(label, 0) + 1
 
-    # Count tasks per maintenance type
-    type_map = {t.get("Maintenance_type_ID") or t.get("id"): t.get("Type_name") or t.get("name", "Unknown")
-                for t in maint_types}
     tasks_by_type = {}
     for t in tasks:
-        tid = t.get("Maintenance_type_ID")
-        label = type_map.get(tid, str(tid) if tid else "Unknown")
+        label = category_map.get(t.get("Type_ID"), "Unknown")
         tasks_by_type[label] = tasks_by_type.get(label, 0) + 1
 
     data_summary = json.dumps({
-        "total_assets":       len(assets),
+        "total_machines":     len(machines),
         "total_tasks":        len(tasks),
-        "departments":        [d.get("Department_name") or d.get("name") for d in departments],
-        "statuses":           [s.get("Status_name") or s.get("name") for s in statuses],
-        "maintenance_types":  [m.get("Type_name") or m.get("name") for m in maint_types],
-        "assets_by_status":   assets_by_status,
+        "departments":        [d.get("Name") for d in departments],
+        "statuses":           [s.get("Description") for s in statuses],
+        "categories":         [c.get("Name") for c in categories],
+        "machines_by_status": machines_by_status,
         "tasks_by_type":      tasks_by_type,
-        "sample_assets":      assets[:5],
+        "sample_machines":    machines[:5],
         "sample_tasks":       tasks[:5],
     }, default=str)
 
     ai_analyses = []
     try:
-        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-        completion = client.chat.completions.create(
+        groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        completion = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             max_tokens=1024,
             messages=[
@@ -185,8 +316,7 @@ def analytics():
                         "You are an equipment maintenance analyst. "
                         "Analyze the JSON data and return ONLY a JSON array of exactly 5 insight objects. "
                         "Each object must have these fields: "
-                        "\"title\" (short heading), "
-                        "\"insight\" (2-3 sentence finding), "
+                        "\"title\" (short heading), \"insight\" (2-3 sentence finding), "
                         "\"recommendation\" (1-2 sentence action), "
                         "\"severity\" (one of: info, warning, critical). "
                         "Return raw JSON only — no markdown, no code fences, no explanation."
@@ -214,13 +344,15 @@ def analytics():
     return render_template(
         "analytics.html",
         employee=employee.data[0],
-        assets=assets,
+        assets=machines,
         tasks=tasks,
         statuses=statuses,
         departments=departments,
         ai_analyses=ai_analyses,
     )
 
+
+# ── Generic table browser (Settings, Log History, etc.) ─────────────────────
 
 @app.route("/dashboard")
 def dashboard():
@@ -230,153 +362,128 @@ def dashboard():
     user_id      = session["user"]["id"]
     access_token = session["user"]["access_token"]
 
-    active_table = request.args.get("table", "maintenance_overview")
-
+    active_table = request.args.get("table", "Machine")
     if active_table not in ALLOWED_TABLES:
-        active_table = "maintenance_overview"
+        active_table = "Machine"
 
-    authed_client = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_ANON_KEY")
-    )
+    client = _authed_client(access_token)
 
-    try:
-        authed_client.auth.set_session(access_token, "")
-    except Exception:
-        # Token expired — clear session and send back to login
-        session.clear()
-        return redirect(url_for("login"))
-
-    # Get employee record
-    employee = (
-        authed_client.table("Employee")
-        .select("*")
-        .eq("user_UID", user_id)
-        .execute()
-    )
-
+    employee = client.table("Employee").select("*").eq("User_UID", user_id).execute()
     if not employee.data:
         return "No employee record found for this user"
 
-    table_data = (
-        authed_client.table(active_table)
-        .select("*")
-        .execute()
-    )
+    table_data = client.table(active_table).select("*").execute()
 
     return render_template(
         "dashboard.html",
         tasks=table_data.data,
         employee=employee.data[0],
         tables=ALLOWED_TABLES,
-        active_table=active_table
+        active_table=active_table,
     )
+
+
+# ── Register machine ─────────────────────────────────────────────────────────
 
 @app.route("/register-asset", methods=["GET", "POST"])
 def register_asset():
     if "user" not in session:
         return redirect(url_for("login"))
 
-    access_token = session["user"]["access_token"]
     user_id      = session["user"]["id"]
+    access_token = session["user"]["access_token"]
+    client       = _authed_client(access_token)
 
-    authed_client = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_ANON_KEY")
-    )
-    authed_client.auth.set_session(access_token, "")
-
-    employee = (
-        authed_client.table("Employee")
-        .select("*")
-        .eq("user_UID", user_id)
-        .execute()
-    )
+    employee = client.table("Employee").select("*").eq("User_UID", user_id).execute()
     if not employee.data:
         return "No employee record found for this user"
 
-    if request.method == "POST":
-        new_asset = {
-            "Name":           request.form["name"],
-            "Year":           request.form.get("year") or None,
-            "Brand":          request.form.get("brand") or None,
-            "Model":          request.form.get("model") or None,
-            "chasis_number":  request.form.get("chasis_number") or None,
-            "plaat_nummer":   request.form.get("plaat_nummer") or None,
-            "kilometerstand": request.form.get("kilometerstand") or None,
-            "Status":         request.form.get("status") or None,
-            "type_id":        request.form.get("type_id") or None,
-        }
-        # leeg -> None, en lege strings niet meesturen
-        new_asset = {k: v for k, v in new_asset.items() if v not in (None, "")}
+    brands     = client.table("Brand").select("*").execute().data or []
+    statuses   = client.table("Status").select("*").execute().data or []
+    categories = client.table("Category").select("*").execute().data or []
 
+
+    if request.method == "POST":
+        new_machine = {
+            "Machine_number": request.form.get("machine_number"),
+            "Year":           request.form.get("year") or None,
+            "Model":          request.form.get("model") or None,
+            "Chasis_number":  request.form.get("chasis_number") or None,
+            "Plate_number":   request.form.get("plate_number") or None,
+            "Mileage":        request.form.get("mileage") or None,
+            "Brand_ID":       request.form.get("brand_id") or None,
+            "Status_ID":      request.form.get("status_id") or None,
+            "Category_ID":    request.form.get("category_id") or None,
+        }
+        new_machine = {k: v for k, v in new_machine.items() if v not in (None, "")}
         try:
-            authed_client.table("Asset").insert(new_asset).execute()
-            flash("Apparatuur succesvol geregistreerd.")
-            return redirect(url_for("dashboard", table="Asset"))
+            client.table("Machine").insert(new_machine).execute()
+            flash("Machine succesvol geregistreerd.")
+            return redirect(url_for("dashboard", table="Machine"))
         except Exception as e:
-            flash(f"Fout bij registreren van apparatuur: {str(e)}")
+            flash(f"Fout bij registreren: {str(e)}")
 
     return render_template(
         "register_asset.html",
         employee=employee.data[0],
-      
+        active_page="register_asset",
+        brands=brands,
+        statuses=statuses,
+        categories=categories,
     )
 
+
+# ── Plan maintenance ─────────────────────────────────────────────────────────
 
 @app.route("/plan-maintenance", methods=["GET", "POST"])
 def plan_maintenance():
     if "user" not in session:
         return redirect(url_for("login"))
 
-    access_token = session["user"]["access_token"]
     user_id      = session["user"]["id"]
+    access_token = session["user"]["access_token"]
+    client       = _authed_client(access_token)
 
-    authed_client = create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_ANON_KEY")
-    )
-    authed_client.auth.set_session(access_token, "")
-
-    employee = (
-        authed_client.table("Employee")
-        .select("*")
-        .eq("user_UID", user_id)
-        .execute()
-    )
+    employee = client.table("Employee").select("*").eq("User_UID", user_id).execute()
     if not employee.data:
         return "No employee record found for this user"
 
-    assets = authed_client.table("Asset").select("Asset_ID, Name").execute().data or []
+    machines   = client.table("Machine").select("Machine_ID, Machine_number, Model").execute().data or []
+    categories = client.table("Category").select("*").execute().data or []
+    statuses   = client.table("Status").select("*").execute().data or []
+    employees  = client.table("Employee").select("*").execute().data or []
 
     if request.method == "POST":
-        new_schedule = {
-            "Asset_id":         request.form.get("asset_id"),
-            "maintenance_date": request.form.get("maintenance_date") or None,
-            "next_maintenance": request.form.get("next_maintenance") or None,
+        new_task = {
+            "Machine_ID":  request.form.get("machine_id"),
+            "Type_ID":     request.form.get("type_id") or None,
+            "Status_ID":   request.form.get("status_id") or None,
+            "Date":        request.form.get("date"),
+            "Remark":      request.form.get("remark") or None,
+            "Price":       request.form.get("price") or None,
+            "Assigned_to": request.form.get("assigned_to") or None,
         }
-        new_schedule = {k: v for k, v in new_schedule.items() if v not in (None, "")}
-
+        new_task = {k: v for k, v in new_task.items() if v not in (None, "")}
         try:
-            authed_client.table("schedule_maintenance").insert(new_schedule).execute()
+            client.table("Maintenance_task").insert(new_task).execute()
             flash("Onderhoud succesvol gepland.")
-            return redirect(url_for("plan_maintenance"))
+            return redirect(url_for("maintenance"))
         except Exception as e:
-            flash(f"Fout bij plannen van onderhoud: {str(e)}")
+            flash(f"Fout bij plannen: {str(e)}")
 
-    schedules = (
-        authed_client.table("schedule_maintenance")
-        .select("*, Asset(Name)")
-        .order("maintenance_id", desc=True)
-        .execute()
-    ).data or []
+    tasks = client.table("Maintenance_task").select("*").order("Date", desc=True).execute().data or []
 
     return render_template(
         "plan_maintenance.html",
         employee=employee.data[0],
-        assets=assets,
-        schedules=schedules,
+        active_page="plan_maintenance",
+        machines=machines,
+        categories=categories,
+        statuses=statuses,
+        employees=employees,
+        schedules=tasks,
     )
+
 
 if __name__ == "__main__":
     app.run(debug=True)
