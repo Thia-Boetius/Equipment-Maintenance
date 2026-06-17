@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body data-token="{{ session.get('user', {}).get('access_token', '') }}">
 
 <aside class="sidebar">
     <div class="sidebar-logo">
@@ -97,6 +97,7 @@
     </div>
 </div>
 
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>

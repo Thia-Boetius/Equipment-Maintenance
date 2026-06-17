@@ -30,17 +30,11 @@
 
          <div class="form-group">
     <label for="brand">Merk</label>
-    <select id="brand" name="brand" required>
+    <select id="brand" name="brand_id" required>
         <option value="">— Selecteer merk —</option>
-        <option value="Toyota">Toyota</option>
-        <option value="Mitsubishi">Mitsubishi</option>
-        <option value="Honda">Honda</option>
-        <option value="BYD">BYD</option>
-        <option value="Tesla">Tesla</option>
-        <option value="Izuzu">Izuzu</option>
-        <option value="Chevrolet">Chevrolet</option>
-        <option value="Hitachi">Hitachi</option>
-        <option value="Doosan">Doosan</option>
+        {% for brand in brands %}
+        <option value="{{ brand.Brand_ID }}">{{ brand.Name }}</option>
+        {% endfor %}
     </select>
 </div>
             <div class="form-group">
@@ -74,9 +68,20 @@
                 <label for="kilometerstand">Kilometerstand</label>
                 <input type="number" step="0.01" id="kilometerstand" name="kilometerstand">
             </div>
+
+            <div class="form-group">
+                <label for="register_date">Registratiedatum</label>
+                <input type="date" id="register_date" name="register_date">
+            </div>
         </div>
 
         <button type="submit" class="btn-primary">Apparatuur opslaan</button>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.getElementById('register_date').valueAsDate = new Date();
+</script>
 {% endblock %}

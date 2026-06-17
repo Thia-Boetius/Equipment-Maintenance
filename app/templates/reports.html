@@ -292,7 +292,7 @@
         }
     </style>
 </head>
-<body>
+<body data-token="{{ session.get('user', {}).get('access_token', '') }}">
 
 <!-- ── Sidebar ── -->
 <aside class="sidebar">
@@ -474,5 +474,6 @@
     </div><!-- /content -->
 </div><!-- /main -->
 
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 </body>
 </html>
