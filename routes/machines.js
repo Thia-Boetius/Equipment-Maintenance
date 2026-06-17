@@ -1,7 +1,20 @@
-const express      = require('express');
-const router       = express.Router();
-const db           = require('../config/db');
-const { verifyToken } = require('../middlewares/auth');
+const express             = require('express');
+const router              = express.Router();
+const db                  = require('../config/db');
+const { verifyToken }     = require('../middlewares/auth');
+const { validate }        = require('../middlewares/validate');
+
+const machineSchema = {
+    Machine_number: { type: 'string', required: true, maxLength: 100 },
+    Year:           { type: 'number', min: 1900, max: 2100 },
+    Model:          { type: 'string', maxLength: 100 },
+    Chasis_number:  { type: 'string', maxLength: 100 },
+    Plate_number:   { type: 'string', maxLength: 50 },
+    Mileage:        { type: 'number', min: 0 },
+    Brand_ID:       { type: 'number' },
+    Status_ID:      { type: 'number' },
+    Category_ID:    { type: 'number' },
+};
 
 // GET /api/machines — all machines with joined Brand, Status, Category
 router.get('/', verifyToken, async (req, res) => {
@@ -39,7 +52,7 @@ router.get('/:id', verifyToken, async (req, res) => {
 });
 
 // POST /api/machines
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', verifyToken, validate(machineSchema), async (req, res) => {
     const { Machine_number, Year, Model, Chasis_number, Plate_number, Mileage, Brand_ID, Status_ID, Category_ID } = req.body;
     try {
         const [result] = await db.query(

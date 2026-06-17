@@ -1,10 +1,16 @@
-const express = require('express');
-const router  = express.Router();
-const jwt     = require('jsonwebtoken');
-const db      = require('../config/db');
+const express          = require('express');
+const router           = express.Router();
+const jwt              = require('jsonwebtoken');
+const db               = require('../config/db');
+const { validate }     = require('../middlewares/validate');
+
+const loginSchema = {
+    email:    { type: 'string', required: true, maxLength: 255 },
+    password: { type: 'string', required: true, maxLength: 255 },
+};
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', validate(loginSchema), async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
         return res.status(400).json({ error: 'Email and password are required' });

@@ -1,7 +1,18 @@
 const express         = require('express');
-const router          = express.Router();
+const router          = require('express').Router();
 const db              = require('../config/db');
 const { verifyToken } = require('../middlewares/auth');
+const { validate }    = require('../middlewares/validate');
+
+const taskSchema = {
+    Machine_ID:  { type: 'number', required: true },
+    Type_ID:     { type: 'number' },
+    Status_ID:   { type: 'number' },
+    Date:        { type: 'date',   required: true },
+    Remark:      { type: 'string', maxLength: 1000 },
+    Price:       { type: 'number', min: 0 },
+    Assigned_to: { type: 'number' },
+};
 
 // GET /api/maintenance — all tasks with joined details
 router.get('/', verifyToken, async (req, res) => {
@@ -50,7 +61,7 @@ router.get('/:id', verifyToken, async (req, res) => {
 });
 
 // POST /api/maintenance
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', verifyToken, validate(taskSchema), async (req, res) => {
     const { Machine_ID, Type_ID, Status_ID, Date, Remark, Price, Assigned_to } = req.body;
     try {
         const [result] = await db.query(
