@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% set active_page = 'checklist' %}
+{% block page_title %}<h1 class="page-title">{{ category.Name }} report</h1>{% endblock %}
+{% block topbar_extra %}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .checklist-meta {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .inspect-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1.5rem;
+    }
+    .inspect-table thead th {
+        text-align: left;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--navy);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0.6rem 0.75rem;
+        background: var(--orange-light);
+        border-bottom: 2px solid var(--orange);
+    }
+    .inspect-table thead th.center { text-align: center; }
+    .inspect-table tbody td {
+        padding: 0.65rem 0.75rem;
+        font-size: 0.9rem;
+        border-bottom: 1px solid var(--border);
+        vertical-align: middle;
+    }
+    .inspect-table tbody tr:hover td { background: #fafbfd; }
+    .item-name { font-weight: 500; }
+    .status-options {
+        display: flex;
+        justify-content: center;
+        gap: 1.25rem;
+    }
+    .status-options label {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        color: var(--muted);
+    }
+    .status-options input[type="radio"] {
+        accent-color: var(--orange);
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+    .usage-summary {
+        background: var(--orange-light);
+        border-radius: 10px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="POST">
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <span class="card-title">{{ category.Name }} Daily Inspection Checklist</span>
+    </div>
+
+    <div class="checklist-meta">
+        <div class="form-group">
+            <label for="machine_id">Equipment *</label>
+            <select id="machine_id" name="machine_id" required>
+                <option value="">— Select equipment —</option>
+                {% for m in machines %}
+                <option value="{{ m.Machine_ID }}">{{ m.Machine_number }} — {{ m.Model }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="date">Inspection date *</label>
+            <input type="date" id="date" name="date" required>
+        </div>
+        <div class="form-group">
+            <label for="vendor">Vendor</label>
+            <input type="text" id="vendor" name="vendor" placeholder="Optional">
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <span class="card-title">What to inspect</span>
+    </div>
+
+    <table class="inspect-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th class="center">Condition</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inspection_items %}
+            <tr>
+                <td class="item-name">{{ item }}</td>
+                <td>
+                    <div class="status-options">
+                        <label><input type="radio" name="item_{{ loop.index }}" value="good" checked> Good</label>
+                        <label><input type="radio" name="item_{{ loop.index }}" value="needs_repair"> Needs repair</label>
+                        <label><input type="radio" name="item_{{ loop.index }}" value="na"> N/A</label>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="form-group full">
+        <label for="defect">Comments / defects found</label>
+        <textarea id="defect" name="defect" rows="3" placeholder="Describe any issues found during inspection..."></textarea>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Usage today</span>
+    </div>
+
+    <div class="usage-summary">
+        {% if category.Name|lower == 'car' %}
+        <div class="form-group">
+            <label for="usage_today">Distance driven today (km)</label>
+            <input type="number" step="0.1" id="usage_today" name="usage_today" placeholder="0">
+        </div>
+        {% else %}
+        <div class="form-group">
+            <label for="hours_today">Hours used today</label>
+            <input type="number" step="0.1" id="hours_today" name="hours_today" placeholder="0">
+        </div>
+        {% endif %}
+        <div class="form-group">
+            <label for="remark">General remark</label>
+            <input type="text" id="remark" name="remark" placeholder="Optional">
+        </div>
+    </div>
+
+    <button type="submit" class="btn-primary">Submit checklist</button>
+</div>
+</form>
+{% endblock %}
