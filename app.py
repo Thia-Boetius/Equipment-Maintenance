@@ -402,6 +402,7 @@ def register_asset():
     statuses   = client.table("Status").select("*").execute().data or []
     categories = client.table("Category").select("*").execute().data or []
 
+
     if request.method == "POST":
         new_machine = {
             "Machine_number": request.form.get("machine_number"),
