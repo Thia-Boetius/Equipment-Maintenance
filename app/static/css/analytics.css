@@ -1,0 +1,29 @@
+.ai-badge { display: flex; align-items: center; gap: 0.4rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.02em; }
+
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+.stat-card { background: var(--white); border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem 1.5rem; }
+.stat-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.stat-value { font-size: 2rem; font-weight: 700; margin-top: 0.25rem; }
+.stat-card.orange { border-left: 4px solid var(--orange); }
+
+.section-heading { display: flex; align-items: center; gap: 0.6rem; font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; }
+.section-heading .dot { width: 8px; height: 8px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; }
+
+.insights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.25rem; }
+.insight-card { background: var(--white); border-radius: 14px; border: 1px solid var(--border); padding: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem; transition: box-shadow 0.15s; }
+.insight-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+.insight-card.sev-warning  { border-left: 4px solid #f97316; }
+.insight-card.sev-critical { border-left: 4px solid #ef4444; }
+.insight-card.sev-info     { border-left: 4px solid #3b82f6; }
+
+.insight-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+.insight-title { font-size: 1rem; font-weight: 700; line-height: 1.3; }
+.severity-pill { flex-shrink: 0; display: inline-block; padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.severity-info     { background: #e0f2fe; color: #0369a1; }
+.severity-warning  { background: #fff7ed; color: #c2410c; }
+.severity-critical { background: #fee2e2; color: #b91c1c; }
+
+.insight-text { font-size: 0.9rem; color: #374151; line-height: 1.6; }
+.recommendation-box { background: #f8fafc; border-left: 3px solid var(--orange); border-radius: 0 8px 8px 0; padding: 0.65rem 0.85rem; }
+.recommendation-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--orange); margin-bottom: 0.25rem; }
+.recommendation-text { font-size: 0.875rem; color: #374151; line-height: 1.5; }

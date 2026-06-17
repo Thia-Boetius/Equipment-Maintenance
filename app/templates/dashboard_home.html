@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% set active_page = 'dashboard' %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+{% macro status_badge(s) %}
+  {% set sl = s | lower %}
+  {% if 'active' in sl or 'complet' in sl or 'done' in sl %}
+    <span class="badge badge-green">{{ s }}</span>
+  {% elif 'cancel' in sl or 'fail' in sl or 'inactive' in sl %}
+    <span class="badge badge-red">{{ s }}</span>
+  {% elif 'pending' in sl or 'progress' in sl or 'open' in sl %}
+    <span class="badge badge-orange">{{ s }}</span>
+  {% else %}
+    <span class="badge badge-gray">{{ s }}</span>
+  {% endif %}
+{% endmacro %}
+
+<!-- Summary cards -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:1rem; margin-bottom:1.5rem;">
+    <div class="card" style="border-left:4px solid var(--orange);">
+        <div style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Total Machines</div>
+        <div style="font-size:2rem;font-weight:700;margin-top:.25rem;">{{ total_machines }}</div>
+    </div>
+    <div class="card" style="border-left:4px solid var(--orange);">
+        <div style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Total Tasks</div>
+        <div style="font-size:2rem;font-weight:700;margin-top:.25rem;">{{ total_tasks }}</div>
+    </div>
+    {% for status, count in machines_by_status.items() %}
+    <div class="card" style="border-left:4px solid var(--border);">
+        <div style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">{{ status }}</div>
+        <div style="font-size:2rem;font-weight:700;margin-top:.25rem;">{{ count }}</div>
+        <div style="font-size:.8rem;color:var(--muted);">machines</div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Tasks by status -->
+{% if tasks_by_status %}
+<div class="card" style="margin-bottom:1.5rem;">
+    <div class="card-header">
+        <span class="card-title">Tasks by Status</span>
+    </div>
+    {% set max_val = tasks_by_status.values() | max %}
+    <div style="display:flex;flex-direction:column;gap:.75rem;">
+        {% for status, count in tasks_by_status.items() %}
+        <div style="display:flex;align-items:center;gap:1rem;">
+            <span style="width:130px;font-size:.9rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ status }}</span>
+            <div style="flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;">
+                <div style="height:100%;background:var(--orange);border-radius:4px;width:{{ (count / max_val * 100) | int }}%;"></div>
+            </div>
+            <span style="font-size:.85rem;font-weight:600;color:var(--muted);width:30px;text-align:right;">{{ count }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent maintenance tasks -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Recent Maintenance Tasks</span>
+        <a class="see-more" href="{{ url_for('maintenance') }}">see all</a>
+    </div>
+    <div class="table-wrap">
+        {% if recent_tasks %}
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Machine</th>
+                    <th>Model</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Assigned To</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in recent_tasks %}
+                <tr>
+                    <td style="color:var(--muted);">{{ t.Task_ID }}</td>
+                    <td>{{ t.machine_number }}</td>
+                    <td>{{ t.model }}</td>
+                    <td>{{ t.type }}</td>
+                    <td>{{ status_badge(t.task_status) }}</td>
+                    <td>{{ t.Date }}</td>
+                    <td>{{ t.assigned_to }}</td>
+                    <td>{{ t.Price if t.Price else '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-data">No maintenance tasks found.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/filter-table.js') }}"></script>
+{% endblock %}

@@ -1,9 +1,7 @@
 {% extends "base.html" %}
-{% set active_page = 'dashboard' if active_table == 'maintenance_overview'
-                 else 'equipment' if active_table == 'Asset'
-                 else 'maintenance' if active_table == 'Maintenance_task'
-                 else 'log_history' if active_table == 'Maintenance_type'
-                 else 'settings' if active_table == 'Position'
+{% set active_page = 'equipment'   if active_table == 'Machine'
+                 else 'log_history' if active_table == 'Category'
+                 else 'settings'    if active_table == 'Position'
                  else 'dashboard' %}
 
 {% block page_title %}{{ active_table.replace('_', ' ') }}{% endblock %}
@@ -57,13 +55,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-    function filterTable() {
-        const input = document.getElementById("searchInput").value.toLowerCase();
-        const rows = document.querySelectorAll("#dataTable tbody tr");
-        rows.forEach(row => {
-            row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
-        });
-    }
-</script>
+<script src="{{ url_for('static', filename='js/filter-table.js') }}"></script>
 {% endblock %}
