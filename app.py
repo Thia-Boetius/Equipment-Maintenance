@@ -24,11 +24,23 @@ ALLOWED_TABLES = [
     "Maintenance_task", "Department", "Position", "Employee",
 ]
 
+class AuthExpiredError(Exception):
+    pass
+
+@app.errorhandler(AuthExpiredError)
+def handle_auth_expired(e):
+    session.clear()
+    return redirect(url_for("login"))
+
 # ── Shared helpers ───────────────────────────────────────────────────────────
 
 def _authed_client(access_token):
+    refresh_token = session.get("user", {}).get("refresh_token", "")
     c = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_ANON_KEY"))
-    c.auth.set_session(access_token, "")
+    try:
+        c.auth.set_session(access_token, refresh_token)
+    except Exception:
+        raise AuthExpiredError()
     return c
 
 def _lookup_maps(client):
@@ -86,9 +98,10 @@ def login():
                 "email": email, "password": password
             })
             session["user"] = {
-                "id":           response.user.id,
-                "email":        response.user.email,
-                "access_token": response.session.access_token,
+                "id":            response.user.id,
+                "email":         response.user.email,
+                "access_token":  response.session.access_token,
+                "refresh_token": response.session.refresh_token,
             }
             return redirect(url_for("dashboard_home"))
         except Exception as e:
