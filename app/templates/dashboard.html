@@ -4,7 +4,7 @@
                  else 'settings'    if active_table == 'Position'
                  else 'dashboard' %}
 
-{% block page_title %}{{ active_table.replace('_', ' ') }}{% endblock %}
+{% block page_title %}<h1 class="page-title">{{ active_table.replace('_', ' ') }}</h1>{% endblock %}
 
 {% block content %}
 <div class="card">
