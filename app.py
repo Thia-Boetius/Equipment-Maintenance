@@ -484,6 +484,40 @@ def plan_maintenance():
         schedules=tasks,
     )
 
+@app.context_processor
+def notification_data():
 
+    if "user" not in session:
+        return {"recent_notifications": []}
+
+    try:
+        client = _authed_client(session["user"]["access_token"])
+
+        tasks = (
+            client.table("Maintenance_task")
+            .select("*")
+            .order("Date", desc=True)
+            .limit(5)
+            .execute()
+            .data
+        ) or []
+
+        brand_map, status_map, category_map, employee_map, _, _ = _lookup_maps(client)
+
+        machines = client.table("Machine").select("*").execute().data or []
+
+        notifications = _enrich_tasks(
+            tasks,
+            machines,
+            brand_map,
+            status_map,
+            category_map,
+            employee_map
+        )
+
+        return {"recent_notifications": notifications}
+
+    except Exception:
+        return {"recent_notifications": []}
 if __name__ == "__main__":
     app.run(debug=True)
