@@ -438,7 +438,37 @@ def dashboard():
     if not employee.data:
         return "No employee record found for this user"
 
-    table_data = client.table(active_table).select("*").execute()
+    filter_brands   = []
+    filter_statuses = []
+    filter_models   = []
+    current_filters = {}
+
+    if active_table == "Machine":
+        brand_map, status_map, category_map, employee_map, statuses, categories = _lookup_maps(client)
+        filter_brands   = client.table("Brand").select("*").execute().data or []
+        filter_statuses = client.table("Status").select("*").execute().data or []
+        all_machines    = client.table("Machine").select("Model").execute().data or []
+        filter_models   = sorted({m["Model"] for m in all_machines if m.get("Model")})
+
+        brand_id  = request.args.get("brand_id")
+        status_id = request.args.get("status_id")
+        model     = request.args.get("model")
+        current_filters = {"brand_id": brand_id, "status_id": status_id, "model": model}
+
+        query = client.table("Machine").select("*")
+        if brand_id:
+            query = query.eq("Brand_ID", int(brand_id))
+        if status_id:
+            query = query.eq("Status_ID", int(status_id))
+        if model:
+            query = query.eq("Model", model)
+
+        table_data = query.execute()
+        # Enrich machine data with actual names instead of IDs
+        if table_data.data:
+            table_data.data = _enrich_machines(table_data.data, brand_map, status_map, category_map)
+    else:
+        table_data = client.table(active_table).select("*").execute()
 
     return render_template(
         "dashboard.html",
@@ -446,6 +476,10 @@ def dashboard():
         employee=employee.data[0],
         tables=ALLOWED_TABLES,
         active_table=active_table,
+        filter_brands=filter_brands,
+        filter_statuses=filter_statuses,
+        filter_models=filter_models,
+        current_filters=current_filters,
     )
 
 
