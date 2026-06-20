@@ -60,4 +60,48 @@
     </a>
     {% endfor %}
 </div>
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div id="toast" style="
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a2744;
+    color: white;
+    padding: 0.85rem 1.5rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease;
+    z-index: 999;
+">
+    <span>✅ {{ messages[0] }}</span>
+    <span onclick="dismissToast()" style="cursor:pointer; opacity:0.7; font-size:1rem;">✕</span>
+</div>
+
+<style>
+@keyframes slideUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+</style>
+
+<script>
+    setTimeout(dismissToast, 4000);
+    function dismissToast() {
+        const toast = document.getElementById("toast");
+        if (toast) {
+            toast.style.transition = "opacity 0.3s ease";
+            toast.style.opacity = "0";
+            setTimeout(() => toast.remove(), 300);
+        }
+    }
+</script>
+{% endif %}
+{% endwith %}
 {% endblock %}
