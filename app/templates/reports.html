@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Maintix – Reports</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -21,7 +22,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            font-family: 'DM Sans', sans-serif;
             background: var(--bg);
             color: var(--text);
             display: flex;
@@ -291,7 +292,7 @@
         }
     </style>
 </head>
-<body>
+<body data-token="{{ session.get('user', {}).get('access_token', '') }}">
 
 <!-- ── Sidebar ── -->
 <aside class="sidebar">
@@ -383,7 +384,7 @@
                     <div class="status-row">
                         <span class="status-name">{{ status_name }}</span>
                         <div class="bar-track">
-                            <div class="bar-fill" style="width: {{ pct }}%"></div>
+                            <div class="bar-fill" style="width: {{ pct }}%;"></div>
                         </div>
                         <span class="status-count">{{ cnt }}</span>
                     </div>
@@ -473,5 +474,6 @@
     </div><!-- /content -->
 </div><!-- /main -->
 
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 </body>
 </html>

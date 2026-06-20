@@ -1,12 +1,10 @@
 {% extends "base.html" %}
-{% set active_page = 'dashboard' if active_table == 'maintenance_overview'
-                 else 'equipment' if active_table == 'Asset'
-                 else 'maintenance' if active_table == 'Maintenance_task'
-                 else 'log_history' if active_table == 'Maintenance_type'
-                 else 'settings' if active_table == 'Position'
+{% set active_page = 'equipment'   if active_table == 'Machine'
+                 else 'log_history' if active_table == 'Category'
+                 else 'settings'    if active_table == 'Position'
                  else 'dashboard' %}
 
-{% block page_title %}{{ active_table.replace('_', ' ') }}{% endblock %}
+{% block page_title %}<h1 class="page-title">{{ active_table.replace('_', ' ') }}</h1>{% endblock %}
 
 {% block content %}
 <div class="card">
@@ -14,6 +12,55 @@
         <span class="card-title">{{ active_table.replace('_', ' ') }} Overview</span>
         <a class="see-more" href="#">see more</a>
     </div>
+
+    {% if active_table == 'Machine' and filter_brands %}
+    <div class="filter-section">
+        <form method="GET" class="filter-form">
+            <input type="hidden" name="table" value="{{ active_table }}">
+            
+            <div class="filter-group">
+                <label for="brand_filter">Brand</label>
+                <select id="brand_filter" name="brand_id" class="filter-select">
+                    <option value="">All Brands</option>
+                    {% for brand in filter_brands %}
+                    <option value="{{ brand.Brand_ID }}" {% if current_filters.brand_id|string == brand.Brand_ID|string %}selected{% endif %}>
+                        {{ brand.Name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="status_filter">Status</label>
+                <select id="status_filter" name="status_id" class="filter-select">
+                    <option value="">All Statuses</option>
+                    {% for status in filter_statuses %}
+                    <option value="{{ status.Status_ID }}" {% if current_filters.status_id|string == status.Status_ID|string %}selected{% endif %}>
+                        {{ status.Description }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="model_filter">Model</label>
+                <select id="model_filter" name="model" class="filter-select">
+                    <option value="">All Models</option>
+                    {% for model in filter_models %}
+                    <option value="{{ model }}" {% if current_filters.model == model %}selected{% endif %}>
+                        {{ model }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="{{ url_for('dashboard', table='Machine') }}" class="btn btn-secondary">Clear Filters</a>
+            </div>
+        </form>
+    </div>
+    {% endif %}
 
     <div class="table-wrap">
         {% if tasks %}
@@ -57,13 +104,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-    function filterTable() {
-        const input = document.getElementById("searchInput").value.toLowerCase();
-        const rows = document.querySelectorAll("#dataTable tbody tr");
-        rows.forEach(row => {
-            row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
-        });
-    }
-</script>
+<script src="{{ url_for('static', filename='js/filter-table.js') }}"></script>
 {% endblock %}

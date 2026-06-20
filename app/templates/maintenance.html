@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% set active_page = 'maintenance' %}
+
+{% block page_title %}<h1 class="page-title">Maintenance</h1>{% endblock %}
+
+{% block content %}
+
+{% macro status_badge(s) %}
+  {% set sl = s | lower %}
+  {% if 'active' in sl or 'complet' in sl or 'done' in sl %}
+    <span class="badge badge-green">{{ s }}</span>
+  {% elif 'cancel' in sl or 'fail' in sl or 'inactive' in sl %}
+    <span class="badge badge-red">{{ s }}</span>
+  {% elif 'pending' in sl or 'progress' in sl or 'open' in sl %}
+    <span class="badge badge-orange">{{ s }}</span>
+  {% else %}
+    <span class="badge badge-gray">{{ s }}</span>
+  {% endif %}
+{% endmacro %}
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">Maintenance Tasks
+            <span style="font-size:.85rem;font-weight:400;color:var(--muted);margin-left:.5rem;">{{ total }} records</span>
+        </span>
+        <a class="see-more" href="{{ url_for('plan_maintenance') }}">+ Plan new</a>
+    </div>
+
+    <div class="table-wrap">
+        {% if tasks %}
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Task ID</th>
+                    <th>Machine</th>
+                    <th>Model</th>
+                    <th>Brand</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Assigned To</th>
+                    <th>Price</th>
+                    <th>Remark</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in tasks %}
+                <tr>
+                    <td style="color:var(--muted);">{{ t.Task_ID }}</td>
+                    <td style="font-weight:600;">{{ t.machine_number }}</td>
+                    <td>{{ t.model }}</td>
+                    <td>{{ t.brand }}</td>
+                    <td>{{ t.type }}</td>
+                    <td>{{ status_badge(t.task_status) }}</td>
+                    <td>{{ t.Date }}</td>
+                    <td>{{ t.assigned_to }}</td>
+                    <td>{{ t.Price if t.Price else '—' }}</td>
+                    <td style="max-width:200px;white-space:normal;">{{ t.Remark or '—' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-data">No maintenance tasks found.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/filter-table.js') }}"></script>
+{% endblock %}
