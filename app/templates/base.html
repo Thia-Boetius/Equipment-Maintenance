@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Maintix</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/equipment.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
-<body data-token="{{ session.get('user', {}).get('access_token', '') }}">
+<body data-token="{{ session.get('user', {}).get('access_token', '') }}" data-page="{{ active_page }}">
 
 <aside class="sidebar">
     <div class="sidebar-logo">
