@@ -6,6 +6,7 @@
     <title>Maintix</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/equipment.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
 <body data-token="{{ session.get('user', {}).get('access_token', '') }}" data-page="{{ active_page }}">
@@ -51,7 +52,7 @@
         <a href="{{ url_for('analytics') }}" class="nav-item {{ 'active' if active_page == 'analytics' else '' }}">
             <span class="nav-icon">📈</span> Analytics
         </a>
-        <a href="{{ url_for('dashboard', table='Position') }}"
+        <a href="{{ url_for('settings') }}"
            class="nav-item {{ 'active' if active_page == 'settings' else '' }}">
             <span class="nav-icon">🔩</span> Settings
         </a>

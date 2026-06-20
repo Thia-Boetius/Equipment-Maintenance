@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% set active_page = 'settings' %}
+
+{% block page_title %}<h1 class="page-title">Settings</h1>{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <!-- User Profile Section -->
+    <div class="settings-card">
+        <div class="settings-header">
+            <h2 class="settings-title">👤 User Profile</h2>
+        </div>
+        <div class="settings-content">
+            <div class="profile-info">
+                <div class="profile-avatar">{{ employee.First_name[0] }}</div>
+                <div class="profile-details">
+                    <div class="profile-item">
+                        <span class="profile-label">Name</span>
+                        <span class="profile-value">{{ employee.First_name }} {{ employee.Last_name if employee.Last_name else '' }}</span>
+                    </div>
+                    <div class="profile-item">
+                        <span class="profile-label">Email</span>
+                        <span class="profile-value">{{ employee.Email if employee.Email else 'Not set' }}</span>
+                    </div>
+                    <div class="profile-item">
+                        <span class="profile-label">Employee ID</span>
+                        <span class="profile-value">{{ employee.Employee_ID if employee.Employee_ID else 'N/A' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Information Section -->
+    <div class="settings-card">
+        <div class="settings-header">
+            <h2 class="settings-title">ℹ️ App Information</h2>
+        </div>
+        <div class="settings-content">
+            <div class="settings-item">
+                <span class="setting-label">Application Name</span>
+                <span class="setting-value">Maintix</span>
+            </div>
+            <div class="settings-item">
+                <span class="setting-label">Version</span>
+                <span class="setting-value">1.0.0</span>
+            </div>
+            <div class="settings-item">
+                <span class="setting-label">Purpose</span>
+                <span class="setting-value">Equipment Maintenance & Management System</span>
+            </div>
+            <div class="settings-item">
+                <span class="setting-label">Last Updated</span>
+                <span class="setting-value">June 2026</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="settings-card">
+        <div class="settings-header">
+            <h2 class="settings-title">✨ Features</h2>
+        </div>
+        <div class="settings-content">
+            <div class="features-grid">
+                <div class="feature-item">
+                    <span class="feature-icon">📊</span>
+                    <span class="feature-name">Dashboard</span>
+                    <span class="feature-desc">View equipment overview and status</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">⚙️</span>
+                    <span class="feature-name">Equipment</span>
+                    <span class="feature-desc">Manage equipment inventory</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🔧</span>
+                    <span class="feature-name">Maintenance</span>
+                    <span class="feature-desc">Track maintenance records</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">✅</span>
+                    <span class="feature-name">Checklist</span>
+                    <span class="feature-desc">Create and manage checklists</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🗓️</span>
+                    <span class="feature-name">Planning</span>
+                    <span class="feature-desc">Plan maintenance schedules</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📈</span>
+                    <span class="feature-name">Analytics</span>
+                    <span class="feature-desc">View insights and statistics</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Device Information Section -->
+    <div class="settings-card">
+        <div class="settings-header">
+            <h2 class="settings-title">📱 Device Information</h2>
+        </div>
+        <div class="settings-content">
+            <div class="settings-item">
+                <span class="setting-label">Browser</span>
+                <span class="setting-value" id="browser-info">Loading...</span>
+            </div>
+            <div class="settings-item">
+                <span class="setting-label">Device Type</span>
+                <span class="setting-value" id="device-type">Loading...</span>
+            </div>
+            <div class="settings-item">
+                <span class="setting-label">Screen Size</span>
+                <span class="setting-value" id="screen-size">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preferences Section -->
+    <div class="settings-card">
+        <div class="settings-header">
+            <h2 class="settings-title">⚙️ Preferences</h2>
+        </div>
+        <div class="settings-content">
+            <div class="preference-item">
+                <span class="preference-label">Theme</span>
+                <span class="preference-value">Light Mode</span>
+            </div>
+            <div class="preference-item">
+                <span class="preference-label">Language</span>
+                <span class="preference-value">English</span>
+            </div>
+            <div class="preference-item">
+                <span class="preference-label">Notifications</span>
+                <span class="preference-value">Enabled</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Section -->
+    <div class="settings-card danger-zone">
+        <div class="settings-header">
+            <h2 class="settings-title">🔐 Account</h2>
+        </div>
+        <div class="settings-content">
+            <p class="settings-description">Manage your account and security settings.</p>
+            <div class="account-actions">
+                <a href="{{ url_for('logout') }}" class="btn-logout">
+                    <span class="icon">🚪</span> Log Out
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Detect device and browser information
+    document.addEventListener('DOMContentLoaded', function() {
+        // Browser detection
+        const ua = navigator.userAgent;
+        let browserName = 'Unknown';
+        if (ua.includes('Chrome')) browserName = 'Chrome';
+        else if (ua.includes('Safari')) browserName = 'Safari';
+        else if (ua.includes('Firefox')) browserName = 'Firefox';
+        else if (ua.includes('Edge')) browserName = 'Microsoft Edge';
+        
+        // Device type detection
+        let deviceType = 'Desktop';
+        if (window.innerWidth <= 768) {
+            deviceType = window.innerWidth <= 480 ? 'Mobile Phone' : 'Tablet';
+        }
+        
+        // Screen size
+        const screenSize = `${window.innerWidth} x ${window.innerHeight}px`;
+        
+        // Update UI
+        document.getElementById('browser-info').textContent = browserName;
+        document.getElementById('device-type').textContent = deviceType;
+        document.getElementById('screen-size').textContent = screenSize;
+    });
+</script>
+{% endblock %}

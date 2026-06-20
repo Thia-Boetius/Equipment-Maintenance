@@ -619,5 +619,27 @@ def notification_data():
 
     except Exception:
         return {"recent_notifications": []}
+
+# ── Settings ──────────────────────────────────────────────────────────────────
+
+@app.route("/settings")
+def settings():
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    user_id      = session["user"]["id"]
+    access_token = session["user"]["access_token"]
+    client       = _authed_client(access_token)
+
+    employee = client.table("Employee").select("*").eq("User_UID", user_id).execute()
+    if not employee.data:
+        return "No employee record found for this user"
+
+    return render_template(
+        "settings.html",
+        employee=employee.data[0],
+        active_page="settings",
+    )
+
 if __name__ == "__main__":
     app.run(debug=True)
