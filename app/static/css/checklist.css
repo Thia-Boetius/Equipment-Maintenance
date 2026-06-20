@@ -13,3 +13,79 @@
 .ci-assigned { width: 150px; flex-shrink: 0; }
 .ci-remark { flex: 1; color: var(--muted); font-size: .85rem; white-space: normal; }
 .summary-row { display: flex; gap: .5rem; align-items: center; }
+
+/* ──────────────────────────────────────────────────────────────
+   MOBILE RESPONSIVENESS
+   ────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .checklist-card { 
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .checklist-card-header { 
+        padding: 0.75rem 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .machine-label { 
+        font-size: 0.95rem;
+    }
+
+    .checklist-row { 
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        flex-wrap: wrap;
+    }
+
+    .ci-type { 
+        width: 100%;
+        font-size: 0.9rem;
+    }
+
+    .ci-date { 
+        width: auto;
+        font-size: 0.8rem;
+    }
+
+    .ci-assigned { 
+        width: auto;
+        font-size: 0.85rem;
+    }
+
+    .ci-remark { 
+        width: 100%;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .checklist-card { 
+        margin-bottom: 0.75rem;
+    }
+
+    .checklist-card-header { 
+        padding: 0.6rem 0.75rem;
+    }
+
+    .machine-label { 
+        font-size: 0.85rem;
+    }
+
+    .machine-sub { 
+        font-size: 0.75rem;
+    }
+
+    .checklist-row { 
+        gap: 0.5rem;
+        padding: 0.6rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .check-icon { 
+        font-size: 1rem;
+        width: 20px;
+    }
+}
