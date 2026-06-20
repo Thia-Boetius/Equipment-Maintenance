@@ -26,10 +26,6 @@
            class="nav-item {{ 'active' if active_page == 'equipment' else '' }}">
             <span class="nav-icon">⚙️</span> Equipment
         </a>
-        <a href="{{ url_for('register_asset') }}"
-           class="nav-item {{ 'active' if active_page == 'register_asset' else '' }}">
-            <span class="nav-icon">➕</span> Apparatuur registreren
-        </a>
         <a href="{{ url_for('maintenance') }}"
            class="nav-item {{ 'active' if active_page == 'maintenance' else '' }}">
             <span class="nav-icon">🔧</span> Maintenance
