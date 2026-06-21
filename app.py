@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, render_template, url_for, session, redirect, request, flash
-from supabase import create_client
+from supabase import client, create_client
 from dotenv import load_dotenv
 import os
 import json
@@ -23,6 +23,8 @@ ALLOWED_TABLES = [
     "Machine", "Category", "Status", "Brand",
     "Maintenance_task", "Department", "Position", "Employee",
 ]
+KM_THRESHOLD = 5000
+HOURS_THRESHOLD = 500
 
 class AuthExpiredError(Exception):
     pass
@@ -274,14 +276,14 @@ def checklist_form(category_id):
         }
         client.table("Maintenance_task").insert(new_task).execute()
 
-        machine = client.table("Machine").select("Total_km, Total_hours") \
+        machine = client.table("Machine").select("*") \
                          .eq("Machine_ID", machine_id).execute().data[0]
-        new_total_km    = (machine.get("Total_km") or 0) + usage_today
+        new_mileage     = (machine.get("Mileage") or 0) + usage_today
         new_total_hours = (machine.get("Total_hours") or 0) + hours_today
-        needs_service   = new_total_km >= KM_THRESHOLD or new_total_hours >= HOURS_THRESHOLD
+        needs_service   = new_mileage >= KM_THRESHOLD or new_total_hours >= HOURS_THRESHOLD
 
         client.table("Machine").update({
-            "Total_km":      new_total_km,
+            "Mileage":       new_mileage,
             "Total_hours":   new_total_hours,
             "Needs_service": needs_service,
         }).eq("Machine_ID", machine_id).execute()
