@@ -76,7 +76,27 @@
                 <input type="text" id="searchInput" placeholder="Search..." oninput="filterTable()">
             </div>
             {% endblock %}
-            <span style="font-size:1.3rem; cursor:pointer;" title="Notifications">🔔</span>
+            <div class="notification-wrapper">
+    <span id="bell_icon" title="Notifications">🔔</span>
+
+    <div id="notification-dropdown" class="notification-dropdown">
+        <h4>Recent Maintenance</h4>
+
+        {% if recent_notifications %}
+            {% for task in recent_notifications %}
+                <div class="notification-item">
+                    <strong>{{ task.machine_number }}</strong>
+                    <small>{{ task.type }}</small>
+                    <span>{{ task.Date }}</span>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="notification-item">
+                No recent maintenance
+            </div>
+        {% endif %}
+    </div>
+</div>
             <div class="user-chip">
                 <div class="avatar">{{ employee.First_name[0] }}</div>
                 {{ employee.First_name }} ▾
@@ -98,6 +118,7 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>

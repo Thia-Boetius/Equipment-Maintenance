@@ -74,6 +74,67 @@ tbody tr:hover td { background: #fafbfd; }
 .btn-secondary:hover { background: var(--white); border-color: var(--text); }
 .flash { background: var(--orange-light); color: var(--orange); padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem; font-weight: 500; }
 
+<<<<<<< HEAD
+.notification-wrapper{
+    position: relative;
+}
+
+#bell_icon{
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: 0.2s;
+}
+
+#bell_icon:hover{
+    background: #f0f2f7;
+}
+
+.notification-dropdown{
+    position: absolute;
+    top: 45px;
+    right: 0;
+    width: 320px;
+    background: white;
+    border: 1px solid #e4e8f0;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    display: none;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.notification-dropdown h4{
+    padding: 1rem;
+    border-bottom: 1px solid #e4e8f0;
+}
+
+.notification-item{
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid #f1f1f1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.notification-item:last-child{
+    border-bottom: none;
+}
+
+.notification-item strong{
+    color: var(--navy);
+}
+
+.notification-item small{
+    color: var(--muted);
+}
+
+.notification-item span{
+    color: var(--orange);
+    font-size: 0.8rem;
+}
+=======
 /* ── Filters ── */
 .filter-section { background: var(--bg); border-bottom: 1px solid var(--border); padding: 1.25rem 0; margin: 0 -1.5rem 1.5rem -1.5rem; padding-left: 1.5rem; padding-right: 1.5rem; }
 .filter-form { display: flex; align-items: flex-end; gap: 1.25rem; flex-wrap: wrap; }
@@ -84,3 +145,4 @@ tbody tr:hover td { background: #fafbfd; }
 .filter-actions { display: flex; gap: 0.75rem; align-items: center; }
 .filter-actions .btn-primary,
 .filter-actions .btn-secondary { margin-top: 0; }
+>>>>>>> 6ebe0f28564d523934626bb11757ddba349a24ac
