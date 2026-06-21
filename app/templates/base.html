@@ -2,11 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Maintix</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/equipment.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
-<body data-token="{{ session.get('user', {}).get('access_token', '') }}">
+<body data-token="{{ session.get('user', {}).get('access_token', '') }}" data-page="{{ active_page }}">
 
 <aside class="sidebar">
     <div class="sidebar-logo">
@@ -23,10 +26,6 @@
            class="nav-item {{ 'active' if active_page == 'equipment' else '' }}">
             <span class="nav-icon">⚙️</span> Equipment
         </a>
-        <a href="{{ url_for('register_asset') }}"
-           class="nav-item {{ 'active' if active_page == 'register_asset' else '' }}">
-            <span class="nav-icon">➕</span> Apparatuur registreren
-        </a>
         <a href="{{ url_for('maintenance') }}"
            class="nav-item {{ 'active' if active_page == 'maintenance' else '' }}">
             <span class="nav-icon">🔧</span> Maintenance
@@ -37,19 +36,16 @@
         </a>
         <a href="{{ url_for('plan_maintenance') }}"
            class="nav-item {{ 'active' if active_page == 'plan_maintenance' else '' }}">
-            <span class="nav-icon">🗓️</span> Onderhoud plannen
+            <span class="nav-icon">🗓️</span> plan maintenance
         </a>
-        <a href="{{ url_for('reports') }}" class="nav-item {{ 'active' if active_page == 'reports' else '' }}">
+        <a href="{{ url_for('reports') }}" class="nav-item desktop-only {{ 'active' if active_page == 'reports' else '' }}">
             <span class="nav-icon">📊</span> Reports
         </a>
-        <a href="{{ url_for('dashboard', table='Category') }}"
-           class="nav-item {{ 'active' if active_page == 'log_history' else '' }}">
-            <span class="nav-icon">📋</span> Log History
-        </a>
-        <a href="{{ url_for('analytics') }}" class="nav-item {{ 'active' if active_page == 'analytics' else '' }}">
+        <!-- Log History removed per user request -->
+        <a href="{{ url_for('analytics') }}" class="nav-item desktop-only {{ 'active' if active_page == 'analytics' else '' }}">
             <span class="nav-icon">📈</span> Analytics
         </a>
-        <a href="{{ url_for('dashboard', table='Position') }}"
+        <a href="{{ url_for('settings') }}"
            class="nav-item {{ 'active' if active_page == 'settings' else '' }}">
             <span class="nav-icon">🔩</span> Settings
         </a>
@@ -64,6 +60,11 @@
 
 <div class="main">
     <header class="topbar">
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
     <div style="display:flex; align-items:baseline; gap:1rem;">
         {% block page_title %}
           <h1 class="page-title">{{ active_table.replace('_', ' ') }}</h1>
@@ -76,7 +77,27 @@
                 <input type="text" id="searchInput" placeholder="Search..." oninput="filterTable()">
             </div>
             {% endblock %}
-            <span style="font-size:1.3rem; cursor:pointer;" title="Notifications">🔔</span>
+            <div class="notification-wrapper">
+    <span id="bell_icon" title="Notifications">🔔</span>
+
+    <div id="notification-dropdown" class="notification-dropdown">
+        <h4>Recent Maintenance</h4>
+
+        {% if recent_notifications %}
+            {% for task in recent_notifications %}
+                <div class="notification-item">
+                    <strong>{{ task.machine_number }}</strong>
+                    <small>{{ task.type }}</small>
+                    <span>{{ task.Date }}</span>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="notification-item">
+                No recent maintenance
+            </div>
+        {% endif %}
+    </div>
+</div>
             <div class="user-chip">
                 <div class="avatar">{{ employee.First_name[0] }}</div>
                 {{ employee.First_name }} ▾
@@ -98,6 +119,9 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mobile-table.js') }}"></script>
+<script src="{{ url_for('static', filename='js/hamburger-menu.js') }}"></script>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>

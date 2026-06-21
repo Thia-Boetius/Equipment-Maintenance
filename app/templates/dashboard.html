@@ -10,14 +10,25 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">{{ active_table.replace('_', ' ') }} Overview</span>
-        <a class="see-more" href="#">see more</a>
+        {% if active_table == 'Machine' %}
+        <button class="btn-primary" id="add-equipment-btn" style="margin: 0;">+ Register Machine</button>
+        {% endif %}
     </div>
+
+    {% if active_table == 'Machine' %}
+    <div class="search-bar-section">
+        <div class="search-box-large">
+            <span>🔍</span>
+            <input type="text" id="equipmentSearch" placeholder="Search by machine number, brand, model..." oninput="filterEquipment()">
+        </div>
+    </div>
+    {% endif %}
 
     {% if active_table == 'Machine' and filter_brands %}
     <div class="filter-section">
         <form method="GET" class="filter-form">
             <input type="hidden" name="table" value="{{ active_table }}">
-            
+
             <div class="filter-group">
                 <label for="brand_filter">Brand</label>
                 <select id="brand_filter" name="brand_id" class="filter-select">
@@ -87,6 +98,10 @@
                             <span class="badge badge-red">{{ value }}</span>
                         {% elif 'defect' in key|lower %}
                             <span class="badge badge-gray">{{ value }}</span>
+                        {% elif 'needs_service' in key|lower and value %}
+                            <span class="badge badge-red">Yes</span>
+                        {% elif 'needs_service' in key|lower %}
+                            <span class="badge badge-gray">No</span>
                         {% else %}
                             {{ value }}
                         {% endif %}
@@ -101,8 +116,156 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Register Machine Modal -->
+{% if active_table == 'Machine' %}
+<div class="equipment-modal" id="equipment-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Register Machine</h2>
+            <button class="close-btn" id="close-modal">✕</button>
+        </div>
+        <div class="modal-body">
+            <form method="POST" id="equipment-form" action="{{ url_for('dashboard', table='Machine') }}">
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label for="machine_number">Machine Number *</label>
+                        <input type="text" id="machine_number" name="machine_number" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category_id">Category</label>
+                        <select id="category_id" name="category_id">
+                            <option value="">— Select category —</option>
+                            {% for category in categories %}
+                            <option value="{{ category.Category_ID }}">{{ category.Name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="brand_id">Brand</label>
+                        <select id="brand_id" name="brand_id">
+                            <option value="">— Select brand —</option>
+                            {% for brand in brands %}
+                            <option value="{{ brand.Brand_ID }}">{{ brand.Name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="model">Model</label>
+                        <input type="text" id="model" name="model">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="year">Year</label>
+                        <input type="number" id="year" name="year" min="1900" max="2100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status_id">Status</label>
+                        <select id="status_id" name="status_id">
+                            <option value="">— Select status —</option>
+                            {% for status in statuses %}
+                            <option value="{{ status.Status_ID }}">{{ status.Description }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="chasis_number">Chasis Number</label>
+                        <input type="text" id="chasis_number" name="chasis_number">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="plate_number">Plate Number</label>
+                        <input type="text" id="plate_number" name="plate_number">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mileage">Mileage</label>
+                        <input type="number" step="0.01" id="mileage" name="mileage">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="register_date">Registration Date</label>
+                        <input type="date" id="register_date" name="register_date">
+                    </div>
+
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">Save Machine</button>
+                    <button type="button" class="btn-secondary" id="cancel-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/filter-table.js') }}"></script>
+<script src="{{ url_for('static', filename='js/equipment-modal.js') }}"></script>
+<script>
+    // Equipment search functionality
+    function filterEquipment() {
+        const searchInput = document.getElementById('equipmentSearch');
+        const filterValue = searchInput.value.toLowerCase();
+        const table = document.getElementById('dataTable');
+
+        if (!table) return;
+
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(filterValue) ? '' : 'none';
+        });
+    }
+
+    // Modal functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const addBtn = document.getElementById('add-equipment-btn');
+        const modal = document.getElementById('equipment-modal');
+        const closeBtn = document.getElementById('close-modal');
+        const cancelBtn = document.getElementById('cancel-btn');
+
+        if (addBtn) {
+            addBtn.addEventListener('click', function() {
+                modal.classList.add('open');
+            });
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                modal.classList.remove('open');
+            });
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                modal.classList.remove('open');
+            });
+        }
+
+        // Close modal when clicking outside
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.classList.remove('open');
+                }
+            });
+        }
+
+        // Set registration date to today
+        const registerDate = document.getElementById('register_date');
+        if (registerDate) {
+            registerDate.valueAsDate = new Date();
+        }
+    });
+</script>
 {% endblock %}

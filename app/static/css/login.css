@@ -129,3 +129,62 @@ button:hover {
     from { opacity: 1; }
     to   { opacity: 0; visibility: hidden; }
   }
+
+/* ──────────────────────────────────────────────────────────────
+  MOBILE RESPONSIVENESS
+  ────────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+   body {
+       gap: 15px;
+       padding: 0 1rem;
+   }
+
+   .logo-image {
+       max-width: 200px;
+   }
+
+   .login-container {
+       padding: 24px;
+       border-radius: 6px;
+   }
+
+   h1 {
+       font-size: 20px;
+       margin-bottom: 24px;
+   }
+
+   .form-group {
+       margin-bottom: 16px;
+   }
+
+   label {
+       font-size: 14px;
+       margin-bottom: 6px;
+   }
+
+   input {
+       padding: 12px 10px;
+       font-size: 16px;
+   }
+
+   button {
+       padding: 12px 10px;
+       font-size: 16px;
+       border-radius: 4px;
+   }
+
+   .signup-link {
+       font-size: 13px;
+       margin-top: 16px;
+   }
+
+   #error-popup {
+       top: 10px;
+       right: 10px;
+       left: 10px;
+       padding: 10px 16px;
+       font-size: 13px;
+       border-radius: 6px;
+   }
+}

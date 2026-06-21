@@ -1,44 +1,79 @@
 {% extends "base.html" %}
 {% set active_page = 'plan_maintenance' %}
-{% block page_title %}<h1 class="page-title">Onderhoud plannen</h1>{% endblock %}
+{% block page_title %}<h1 class="page-title">Plan Maintenance</h1>{% endblock %}
 {% block topbar_extra %}{% endblock %}
 
 {% block content %}
 <div class="card" style="margin-bottom: 1.5rem;">
     <div class="card-header">
-        <span class="card-title">Nieuw onderhoud plannen</span>
+        <span class="card-title">Plan new maintenance</span>
     </div>
 
     <form method="POST">
         <div class="form-grid">
             <div class="form-group">
-                <label for="asset_id">Apparatuur *</label>
-                <select id="asset_id" name="asset_id" required>
-                    <option value="">— Selecteer apparatuur —</option>
-                    {% for asset in assets %}
-                    <option value="{{ asset.Asset_ID }}">{{ asset.Name }}</option>
+                <label for="machine_id">Equipment *</label>
+                <select id="machine_id" name="machine_id" required>
+                    <option value="">— Select equipment —</option>
+                    {% for machine in machines %}
+                    <option value="{{ machine.Machine_ID }}">{{ machine.Machine_number }}{% if machine.Model %} — {{ machine.Model }}{% endif %}</option>
                     {% endfor %}
                 </select>
             </div>
 
             <div class="form-group">
-                <label for="maintenance_date">Onderhoudsdatum</label>
-                <input type="date" id="maintenance_date" name="maintenance_date">
+                <label for="type_id">Maintenance type</label>
+                <select id="type_id" name="type_id">
+                    <option value="">— Select type —</option>
+                    {% for category in categories %}
+                    <option value="{{ category.Category_ID }}">{{ category.Name }}</option>
+                    {% endfor %}
+                </select>
             </div>
 
             <div class="form-group">
-                <label for="next_maintenance">Volgend onderhoud</label>
-                <input type="date" id="next_maintenance" name="next_maintenance">
+                <label for="status_id">Status</label>
+                <select id="status_id" name="status_id">
+                    <option value="">— Select status —</option>
+                    {% for status in statuses %}
+                    <option value="{{ status.Status_ID }}">{{ status.Description }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Date *</label>
+                <input type="date" id="date" name="date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="assigned_to">Assigned to</label>
+                <select id="assigned_to" name="assigned_to">
+                    <option value="">— Select employee —</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.Employee_ID }}">{{ emp.First_name }} {{ emp.Last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="price">Price</label>
+                <input type="number" step="0.01" id="price" name="price" placeholder="0.00">
+            </div>
+
+            <div class="form-group full">
+                <label for="remark">Remark</label>
+                <textarea id="remark" name="remark" rows="3"></textarea>
             </div>
         </div>
 
-        <button type="submit" class="btn-primary">Onderhoud plannen</button>
+        <button type="submit" class="btn-primary">Plan Maintenance</button>
     </form>
 </div>
 
 <div class="card">
     <div class="card-header">
-        <span class="card-title">Geplande onderhoudsbeurten</span>
+        <span class="card-title">Scheduled maintenance</span>
     </div>
 
     <div class="table-wrap">
@@ -46,25 +81,33 @@
         <table>
             <thead>
                 <tr>
-                    <th>Apparatuur</th>
-                    <th>Onderhoudsdatum</th>
-                    <th>Volgend onderhoud</th>
+                    <th>Equipment</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Assigned to</th>
+                    <th>Price</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in schedules %}
                 <tr>
-                    <td>{{ item.Asset.Name if item.Asset else '—' }}</td>
-                    <td>
-                        {% if item.maintenance_date %}
-                            {{ item.maintenance_date }}
+                    <td data-label="Equipment">{{ item.machine_number }}</td>
+                    <td data-label="Type">{{ item.type }}</td>
+                    <td data-label="Status">
+                        <span class="badge badge-gray">{{ item.task_status }}</span>
+                    </td>
+                    <td data-label="Date">
+                        {% if item.Date %}
+                            {{ item.Date }}
                         {% else %}
                             <span style="color: var(--muted)">—</span>
                         {% endif %}
                     </td>
-                    <td>
-                        {% if item.next_maintenance %}
-                            {{ item.next_maintenance }}
+                    <td data-label="Assigned to">{{ item.assigned_to }}</td>
+                    <td data-label="Price">
+                        {% if item.Price %}
+                            {{ "%.2f"|format(item.Price) }}
                         {% else %}
                             <span style="color: var(--muted)">—</span>
                         {% endif %}
@@ -74,8 +117,8 @@
             </tbody>
         </table>
         {% else %}
-        <p class="no-data">Nog geen onderhoud gepland.</p>
+        <p class="no-data">No maintenance scheduled yet.</p>
         {% endif %}
     </div>
 </div>
-{% endblock %}
+{% endblock %} 
