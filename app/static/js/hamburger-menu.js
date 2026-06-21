@@ -12,11 +12,23 @@ document.addEventListener('DOMContentLoaded', function() {
             hamburgerBtn.classList.toggle('active');
         });
 
-        // Close menu when a nav item is clicked
+        // Close menu when a nav item is clicked — navigate in same tab to avoid opening new tabs on some mobile browsers
         const navItems = document.querySelectorAll('.nav-item, .logout-btn');
         navItems.forEach(item => {
             item.addEventListener('click', function(e) {
-                // Don't prevent default - let navigation happen
+                // If this is an anchor, navigate using location.assign to force same-tab navigation
+                const href = (this.getAttribute && this.getAttribute('href')) || this.href;
+                if (href && href !== '#' && !href.startsWith('javascript:')) {
+                    e.preventDefault();
+                    // Close menu first for smoother UX
+                    sidebar.classList.remove('open');
+                    hamburgerBtn.classList.remove('active');
+                    // Use location.assign so the navigation happens in the same tab
+                    window.location.assign(href);
+                    return;
+                }
+
+                // Fallback: just close the menu
                 sidebar.classList.remove('open');
                 hamburgerBtn.classList.remove('active');
             });

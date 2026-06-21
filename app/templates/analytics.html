@@ -23,13 +23,11 @@
         <a href="{{ url_for('dashboard', table='Maintenance_task') }}" class="nav-item">
             <span class="nav-icon">🔧</span> Maintenance
         </a>
-        <a href="{{ url_for('reports') }}" class="nav-item">
+        <a href="{{ url_for('reports') }}" class="nav-item desktop-only">
             <span class="nav-icon">📊</span> Reports
         </a>
-        <a href="{{ url_for('dashboard', table='Maintenance_type') }}" class="nav-item">
-            <span class="nav-icon">📋</span> Log History
-        </a>
-        <a href="{{ url_for('analytics') }}" class="nav-item active">
+        <!-- Log History removed per user request -->
+        <a href="{{ url_for('analytics') }}" class="nav-item desktop-only active">
             <span class="nav-icon">📈</span> Analytics
         </a>
         <a href="{{ url_for('dashboard', table='Position') }}" class="nav-item">

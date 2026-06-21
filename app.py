@@ -552,6 +552,13 @@ def plan_maintenance():
 
     tasks = client.table("Maintenance_task").select("*").order("Date", desc=True).execute().data or []
 
+    brand_map, status_map, category_map, employee_map, _, _ = _lookup_maps(client)
+    enriched_schedules = _enrich_tasks(
+        tasks,
+        client.table("Machine").select("*").execute().data or [],
+        brand_map, status_map, category_map, employee_map
+    )
+
     return render_template(
         "plan_maintenance.html",
         employee=employee.data[0],
@@ -560,7 +567,7 @@ def plan_maintenance():
         categories=categories,
         statuses=statuses,
         employees=employees,
-        schedules=tasks,
+        schedules=enriched_schedules,
     )
 
 @app.context_processor

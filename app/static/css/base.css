@@ -17,6 +17,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sa
 .nav-item:hover { background: rgba(255,255,255,0.08); color: white; }
 .nav-item.active { background: var(--orange); color: white; }
 .nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+
+/* Show these only on desktop */
+.desktop-only { display: inline-flex; }
 .sidebar-footer { padding: 1rem 0.75rem; border-top: 1px solid rgba(255,255,255,0.08); }
 .logout-btn { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.85rem; border-radius: 8px; color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.95rem; font-weight: 500; transition: all 0.15s; }
 .logout-btn:hover { color: white; background: rgba(255,255,255,0.08); }
@@ -182,6 +185,8 @@ tbody tr:hover td { background: #fafbfd; }
 
 @media (max-width: 768px) {
     :root { --sidebar-w: 0; }
+    /* Hide desktop-only nav items on small screens */
+    .desktop-only { display: none !important; }
     
     /* Show hamburger menu button */
     .hamburger-btn {
