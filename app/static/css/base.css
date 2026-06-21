@@ -95,9 +95,9 @@ tbody tr:hover td { background: #fafbfd; }
 
 .notification-dropdown{
     position: absolute;
-    top: 45px;
-    right: -140;
-    width: 280px;
+    top: calc(100% + 6px); /* sit just below the bell */
+    right: 0; /* align to wrapper's right edge */
+    width: min(92vw, 320px);
     background: white;
     border: 1px solid #e4e8f0;
     border-radius: 12px;
@@ -105,6 +105,17 @@ tbody tr:hover td { background: #fafbfd; }
     display: none;
     z-index: 1000;
     overflow: hidden;
+}
+
+/* Ensure dropdown fits on small screens */
+@media (max-width: 480px) {
+    .notification-dropdown {
+        right: 8px;
+        left: auto;
+        width: calc(100vw - 16px);
+        max-width: calc(100vw - 16px);
+        box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    }
 }
 
 .notification-dropdown h4{
