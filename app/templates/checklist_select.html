@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% set active_page = 'checklist' %}
+{% block page_title %}<h1 class="page-title">Check list</h1>{% endblock %}
+{% block topbar_extra %}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .category-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1.25rem;
+        max-width: 760px;
+    }
+    .category-card {
+        background: var(--white);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        text-decoration: none;
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.15s;
+        cursor: pointer;
+    }
+    .category-card:hover {
+        border-color: var(--orange);
+        box-shadow: 0 4px 14px rgba(242,101,34,0.12);
+        transform: translateY(-2px);
+    }
+    .category-name {
+        font-size: 1.15rem;
+        font-weight: 700;
+        line-height: 1.3;
+    }
+    .category-plus {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--orange-light);
+        color: var(--orange);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="category-grid">
+    {% for cat in categories %}
+    <a href="{{ url_for('checklist_form', category_id=cat.Category_ID) }}" class="category-card">
+        <span class="category-name">{{ cat.Name }}<br>reports</span>
+        <span class="category-plus">+</span>
+    </a>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -24,11 +24,23 @@ ALLOWED_TABLES = [
     "Maintenance_task", "Department", "Position", "Employee",
 ]
 
+class AuthExpiredError(Exception):
+    pass
+
+@app.errorhandler(AuthExpiredError)
+def handle_auth_expired(e):
+    session.clear()
+    return redirect(url_for("login"))
+
 # ── Shared helpers ───────────────────────────────────────────────────────────
 
 def _authed_client(access_token):
+    refresh_token = session.get("user", {}).get("refresh_token", "")
     c = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_ANON_KEY"))
-    c.auth.set_session(access_token, "")
+    try:
+        c.auth.set_session(access_token, refresh_token)
+    except Exception:
+        raise AuthExpiredError()
     return c
 
 def _lookup_maps(client):
@@ -86,9 +98,10 @@ def login():
                 "email": email, "password": password
             })
             session["user"] = {
-                "id":           response.user.id,
-                "email":        response.user.email,
-                "access_token": response.session.access_token,
+                "id":            response.user.id,
+                "email":         response.user.email,
+                "access_token":  response.session.access_token,
+                "refresh_token": response.session.refresh_token,
             }
             return redirect(url_for("dashboard_home"))
         except Exception as e:
@@ -180,6 +193,27 @@ def maintenance():
 
 # ── Checklist ────────────────────────────────────────────────────────────────
 
+# ── Checklist: category picker ──────────────────────────────────────────────
+
+INSPECTION_ITEMS = [
+    "Backup lights and alarm",
+    "Brake condition (dynamic, service, park)",
+    "Brake fluid",
+    "Cab, mirrors, seat belt and glass",
+    "Cooling system fluid",
+    "Engine oil",
+    "Exhaust system",
+    "Fire extinguisher condition",
+    "Horn and gauges",
+    "Hydraulic oil",
+    "Lights",
+    "Oil leak / lube",
+    "Steering (standard and emergency)",
+    "Tires or tracks",
+    "Transmission fluid",
+    "Wheels / tires",
+]
+
 @app.route("/checklist")
 def checklist():
     if "user" not in session:
@@ -193,30 +227,75 @@ def checklist():
     if not employee.data:
         return "No employee record found for this user"
 
-    brand_map, status_map, category_map, employee_map, statuses, categories = _lookup_maps(client)
-    machines = client.table("Machine").select("*").execute().data or []
-    tasks    = client.table("Maintenance_task").select("*").order("Date", desc=True).execute().data or []
-
-    enriched_tasks = _enrich_tasks(tasks, machines, brand_map, status_map, category_map, employee_map)
-
-    grouped = {}
-    for t in enriched_tasks:
-        key = t.get("Machine_ID") or 0
-        if key not in grouped:
-            grouped[key] = {
-                "machine_number": t["machine_number"],
-                "model":          t["model"],
-                "brand":          t["brand"],
-                "tasks":          [],
-            }
-        grouped[key]["tasks"].append(t)
+    categories = client.table("Category").select("*").execute().data or []
 
     return render_template(
-        "checklist.html",
+        "checklist_select.html",
         employee=employee.data[0],
         active_page="checklist",
-        groups=list(grouped.values()),
-        total=len(tasks),
+        categories=categories,
+    )
+
+
+@app.route("/checklist/<int:category_id>", methods=["GET", "POST"])
+def checklist_form(category_id):
+    if "user" not in session:
+        return redirect(url_for("login"))
+
+    user_id      = session["user"]["id"]
+    access_token = session["user"]["access_token"]
+    client       = _authed_client(access_token)
+
+    employee = client.table("Employee").select("*").eq("User_UID", user_id).execute()
+    if not employee.data:
+        return "No employee record found for this user"
+
+    category = client.table("Category").select("*").eq("Category_ID", category_id).execute().data[0]
+    machines = client.table("Machine").select("Machine_ID, Machine_number, Model") \
+                      .eq("Category_ID", category_id).execute().data or []
+
+    if request.method == "POST":
+        machine_id  = request.form.get("machine_id")
+        usage_today = float(request.form.get("usage_today") or 0)
+        hours_today = float(request.form.get("hours_today") or 0)
+        defect      = request.form.get("defect") or None
+        remark      = request.form.get("remark") or None
+
+        new_task = {
+            "Machine_ID":  machine_id,
+            "Type_ID":     category_id,
+            "Date":        request.form.get("date"),
+            "Usage_today": usage_today,
+            "Hours_today": hours_today,
+            "Defect":      defect,
+            "Remark":      remark,
+            "Assigned_to": employee.data[0]["Employee_ID"],
+            "Seen":        False,
+        }
+        client.table("Maintenance_task").insert(new_task).execute()
+
+        machine = client.table("Machine").select("Total_km, Total_hours") \
+                         .eq("Machine_ID", machine_id).execute().data[0]
+        new_total_km    = (machine.get("Total_km") or 0) + usage_today
+        new_total_hours = (machine.get("Total_hours") or 0) + hours_today
+        needs_service   = new_total_km >= KM_THRESHOLD or new_total_hours >= HOURS_THRESHOLD
+
+        client.table("Machine").update({
+            "Total_km":      new_total_km,
+            "Total_hours":   new_total_hours,
+            "Needs_service": needs_service,
+        }).eq("Machine_ID", machine_id).execute()
+
+        flash("Checklist successfully submitted.")
+        return redirect(url_for("checklist"))
+
+    return render_template(
+        "checklist_form.html",
+        employee=employee.data[0],
+        active_page="checklist",
+        category=category,
+        machines=machines,
+        inspection_items=INSPECTION_ITEMS,
     )
 
 
@@ -359,7 +438,37 @@ def dashboard():
     if not employee.data:
         return "No employee record found for this user"
 
-    table_data = client.table(active_table).select("*").execute()
+    filter_brands   = []
+    filter_statuses = []
+    filter_models   = []
+    current_filters = {}
+
+    if active_table == "Machine":
+        brand_map, status_map, category_map, employee_map, statuses, categories = _lookup_maps(client)
+        filter_brands   = client.table("Brand").select("*").execute().data or []
+        filter_statuses = client.table("Status").select("*").execute().data or []
+        all_machines    = client.table("Machine").select("Model").execute().data or []
+        filter_models   = sorted({m["Model"] for m in all_machines if m.get("Model")})
+
+        brand_id  = request.args.get("brand_id")
+        status_id = request.args.get("status_id")
+        model     = request.args.get("model")
+        current_filters = {"brand_id": brand_id, "status_id": status_id, "model": model}
+
+        query = client.table("Machine").select("*")
+        if brand_id:
+            query = query.eq("Brand_ID", int(brand_id))
+        if status_id:
+            query = query.eq("Status_ID", int(status_id))
+        if model:
+            query = query.eq("Model", model)
+
+        table_data = query.execute()
+        # Enrich machine data with actual names instead of IDs
+        if table_data.data:
+            table_data.data = _enrich_machines(table_data.data, brand_map, status_map, category_map)
+    else:
+        table_data = client.table(active_table).select("*").execute()
 
     return render_template(
         "dashboard.html",
@@ -367,6 +476,10 @@ def dashboard():
         employee=employee.data[0],
         tables=ALLOWED_TABLES,
         active_table=active_table,
+        filter_brands=filter_brands,
+        filter_statuses=filter_statuses,
+        filter_models=filter_models,
+        current_filters=current_filters,
     )
 
 
@@ -388,6 +501,7 @@ def register_asset():
     brands     = client.table("Brand").select("*").execute().data or []
     statuses   = client.table("Status").select("*").execute().data or []
     categories = client.table("Category").select("*").execute().data or []
+
 
     if request.method == "POST":
         new_machine = {

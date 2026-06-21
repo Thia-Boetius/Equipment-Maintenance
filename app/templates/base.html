@@ -64,8 +64,12 @@
 
 <div class="main">
     <header class="topbar">
-        <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
-        <div class="topbar-right">
+    <div style="display:flex; align-items:baseline; gap:1rem;">
+        {% block page_title %}
+          <h1 class="page-title">{{ active_table.replace('_', ' ') }}</h1>
+        {% endblock %}
+    </div>
+    <div class="topbar-right">
             {% block topbar_extra %}
             <div class="search-box">
                 <span>🔍</span>
